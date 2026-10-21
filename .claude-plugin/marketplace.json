@@ -1,0 +1,23 @@
+{
+  "name": "lapidix",
+  "owner": {
+    "name": "lapidix"
+  },
+  "description": "Claude Code rules and skills for React/Next.js, NestJS and Go apps built on one architecture",
+  "plugins": [
+    {
+      "name": "lapidix-skills",
+      "source": "./",
+      "description": "Scaffold, review and check React/Next.js, NestJS and Go code against the rules in lapidix/skills",
+      "category": "development",
+      "tags": [
+        "architecture",
+        "conventions",
+        "code-review",
+        "react",
+        "nestjs",
+        "go"
+      ]
+    }
+  ]
+}
