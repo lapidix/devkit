@@ -40,7 +40,7 @@ bash ~/skills/scripts/copy-rules.sh ~/work/app typescript frontend api
 
 For the database, PostgreSQL is `database/postgres` with `database/prisma` (NestJS) or `database/sqlc` (Go); MongoDB is `database/mongodb` with `database/mongoose` (NestJS) or `database/mongo-go-driver` (Go).
 
-- `copy-rules.sh` takes areas (`frontend`) or single files (`database/postgres`), and names the areas the copied rules cite that the project lacks; copy the ones that apply.
+- `copy-rules.sh` takes areas (`frontend`) or single files (`database/postgres`), and lists the areas the copied rules cite that the project lacks, with the files that cite them; copy the ones that apply.
 - Run it again after a `git pull`: new files are added, unchanged ones skipped, and files that differ are shown as a diff and left alone (exit code 2) until you pass `--update`, which overwrites them along with any edits made in the project.
 - In a monorepo, pass `--prefix <app folder>` for each app a set of areas is for (`--prefix apps/web . frontend`); every `**/` glob goes under that folder, so one app's rules do not load while you work on another. Root areas (`monorepo`, `git`) take no prefix. Rerun with the same flags, and files you have not edited compare as unchanged.
 - Each skill reads its rules from the project's `.claude/rules/`. When the project lacks one, a skill from the plugin reads the plugin's copy and says so in its report.
@@ -121,6 +121,7 @@ This links `~/.claude/rules/git` to the clone, so a `git pull` updates it (`CLAU
 
 | Skill | Use it to |
 |---|---|
+| `using-lapidix-skills` | Find the rule or skill for a task; Claude Code reaches for it when it is unsure which one applies |
 | `installing-rules` | Copy the rules a project needs into its `.claude/rules/` and fit their globs, or update them |
 | `scaffolding-entity-slices` | Add a frontend entity slice for an API resource |
 | `auditing-entity-slices` | Check entity slices against the entity rules |
@@ -131,6 +132,16 @@ This links `~/.claude/rules/git` to the clone, so a `git pull` updates it (`CLAU
 | `reviewing-go-changes` | Review Go changes against the rules before a PR |
 | `setting-up-architecture-checks` | Install or repair architecture checks: dependency-cruiser (`check:arch`) for TypeScript apps and monorepos, `internal/archtest` for Go |
 | `writing-pull-requests` | Open a pull request, or write its title and body |
+
+## Contributing
+
+A new or renamed rule or skill goes into the tables above and into the catalog in `skills/using-lapidix-skills/SKILL.md`. Before a pull request, run:
+
+```bash
+bash scripts/check-catalog.sh
+claude plugin validate . --strict
+claude plugin validate ./skills
+```
 
 ## License
 

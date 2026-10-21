@@ -81,12 +81,17 @@ for arg in "$@"; do
   done
 done
 
-# Rules cite other areas (frontend rules cite rules/api/contract.md); name the ones the project has not copied.
-missing=$(grep -ohE 'rules/[a-z-]+/' "$project/.claude/rules"/*/*.md 2>/dev/null | sort -u | sed -E 's#rules/([a-z-]+)/#\1#' |
-  while read -r cited; do
-    [ -d "$repo/rules/$cited" ] && [ ! -d "$project/.claude/rules/$cited" ] && echo "$cited"
-  done | tr '\n' ' ' || true)
-[ -z "$missing" ] || echo "the copied rules cite areas this project does not have: $missing(copy the ones that apply)"
+# Rules cite other areas: frontend rules lean on rules/api/contract.md, while api/contract.md only
+# mentions the Go server for comparison. List each area the project lacks with the files citing it.
+missing=$(grep -oE 'rules/[a-z-]+/' "$project/.claude/rules"/*/*.md 2>/dev/null | sort -u |
+  sed -nE 's#^.*/\.claude/rules/([^:]+):rules/([a-z-]+)/$#\2 \1#p' |
+  while read -r cited file; do
+    [ -d "$repo/rules/$cited" ] && [ ! -d "$project/.claude/rules/$cited" ] && echo "$cited $file"
+  done | awk '{ files[$1] = files[$1] (files[$1] ? ", " : "") $2 } END { for (a in files) print "  " a " (cited by " files[a] ")" }' | sort || true)
+if [ -n "$missing" ]; then
+  echo "areas the copied rules cite that this project does not have; copy the ones that apply:"
+  echo "$missing"
+fi
 
 if [ "$differs" -gt 0 ]; then
   echo "$differs file(s) differ from this repo and were left alone; rerun with --update to overwrite them, losing the project's edits to them" >&2

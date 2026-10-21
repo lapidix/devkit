@@ -43,7 +43,7 @@ Rules are copied into the project's `.claude/rules/`, not linked: Claude Code lo
    bash <copy-rules.sh> . monorepo
    ```
 
-   In a single-app project, one command without `--prefix` copies everything. Exit 1 is a typo in an area or the folder; the message lists the areas. Each run ends by naming areas the copied rules cite that the project lacks; read the line after the last command, and add an area only when it applies to an app's stack (a NestJS rule naming the Go one does not). Done when every confirmed area is in `.claude/rules/` and the commands are written down for the report.
+   In a single-app project, one command without `--prefix` copies everything. Exit 1 is a typo in an area or the folder; the message lists the areas. Each run ends by listing areas the copied rules cite that the project lacks, each with the files that cite it. Read the list after the last command, and add an area only when it applies to an app's stack: `go-server (cited by api/contract.md)` in a NestJS project is a mention for comparison, not a need. Done when every confirmed area is in `.claude/rules/` and the commands are written down for the report.
 
 4. **Updating.** Rerun the same commands; the prefixes show in the copied rules' globs if the earlier report is gone. `same` needs nothing. A `differs` file has changed in lapidix/skills or been edited in the project (exit code 2): show the user its diff, then take the change with `--update` on that command, or keep the project's edit. A cited area left out at install stays out unless the stack has changed. Done when every differing file is updated or kept by the user's choice.
 
