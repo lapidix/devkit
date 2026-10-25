@@ -3,7 +3,7 @@
 Rules and skills for Claude Code and Codex, for building web apps on one architecture: a layered React or Next.js frontend, NestJS or Go servers built domain first around ports and adapters, and one HTTP contract between them.
 
 - **Rules** are the conventions. Each has `paths:` frontmatter, so Claude Code loads it only while it works on matching files, and Codex reads an index of them in `AGENTS.md`: folder structure, naming, errors, transactions, tests.
-- **Skills** are the procedures: scaffold a frontend entity or a server module, review a change against the rules, set up architecture checks, write a pull request.
+- **Skills** are the procedures: install the rules, scaffold a frontend entity or a server module, review a change against the rules, set up architecture checks, write a pull request.
 
 The examples are run, not just written: the frontend slice and the NestJS and Go example modules compile and pass their tests (database tests against PostgreSQL included), and the review and architecture checks were tried against planted violations.
 
@@ -50,7 +50,7 @@ bash ~/devkit/scripts/copy-rules.sh ~/work/app typescript frontend api
 For the database, PostgreSQL is `database/postgres` with `database/prisma` (NestJS) or `database/sqlc` (Go); MongoDB is `database/mongodb` with `database/mongoose` (NestJS) or `database/mongo-go-driver` (Go).
 
 - `copy-rules.sh` takes areas (`frontend`) or single files (`database/postgres`), and lists the areas the copied rules cite that the project lacks, with the files that cite them; copy the ones that apply.
-- Run it again after a `git pull`: new files are added, unchanged ones skipped, and files that differ are shown as a diff and left alone (exit code 2) until you pass `--update`, which overwrites them along with any edits made in the project.
+- Run it again after this repo changes (a `git pull`, or a plugin update): new files are added, unchanged ones skipped, and files that differ are shown as a diff and left alone (exit code 2) until you pass `--update`, which overwrites them along with any edits made in the project.
 - In a monorepo, pass `--prefix <app folder>` for each app a set of areas is for (`--prefix apps/web . frontend`); every `**/` glob goes under that folder, so one app's rules do not load while you work on another. Root areas (`monorepo`, `git`) take no prefix. Rerun with the same flags, and files you have not edited compare as unchanged.
 - For Codex, which does not read `.claude/rules/`, add `--agents-md` to the first command. The script writes a marked index of the copied rules and their paths into the project's `AGENTS.md` and refreshes it on every later run; the rest of `AGENTS.md` stays as it is.
 - Each skill reads its rules from the project's `.claude/rules/`. When the project lacks one, it reads the copy that ships with it and says so in its report.
@@ -131,7 +131,7 @@ This links `~/.claude/rules/git` to the clone, so a `git pull` updates it (`CLAU
 
 | Skill | Use it to |
 |---|---|
-| `using-lapidix-devkit` | Find the rule or skill for a task; Claude Code reaches for it when it is unsure which one applies |
+| `using-lapidix-devkit` | Find the rule or skill for a task; the agent reaches for it when it is unsure which one applies |
 | `installing-rules` | Copy the rules a project needs into its `.claude/rules/` and fit their globs, or update them |
 | `scaffolding-entity-slices` | Add a frontend entity slice for an API resource |
 | `auditing-entity-slices` | Check entity slices against the entity rules |
