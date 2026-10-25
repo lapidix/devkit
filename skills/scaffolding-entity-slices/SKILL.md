@@ -7,7 +7,7 @@ description: Use when adding a new domain entity or API resource to a frontend t
 
 The structure and conventions live in the entity rules: `entities.md` loads when you touch `entities/`, `entity-data-access.md` when you touch `infrastructure/`. Read both before step 3. `example-slice.md` in this folder is one complete slice to copy from.
 
-The rule files named here are in the project's `.claude/rules/{area}/` (`rules/frontend/testing.md` is `.claude/rules/frontend/testing.md`). When the project lacks one and this skill came from the lapidix-skills plugin, read it from `${CLAUDE_PLUGIN_ROOT}/rules/` instead and say in your report that the project does not have it; the `installing-rules` skill copies it in.
+The rule files named here are in the project's `.claude/rules/{area}/` (`rules/frontend/testing.md` is `.claude/rules/frontend/testing.md`). When the project lacks one, read the copy that ships with this skill, in the `rules/` folder two levels above this skill's folder, and say in your report that the project does not have it; the `installing-rules` skill copies it in.
 
 ## Steps
 

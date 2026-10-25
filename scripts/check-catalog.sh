@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Checks that every rule and skill is listed in README.md and in the
-# using-lapidix-skills catalog, so neither falls behind the repo.
+# using-lapidix-devkit catalog, so neither falls behind the repo.
 # Usage: bash scripts/check-catalog.sh
 set -euo pipefail
 
 repo=$(cd "$(dirname "$0")/.." && pwd)
-catalog="$repo/skills/using-lapidix-skills/SKILL.md"
+catalog="$repo/skills/using-lapidix-devkit/SKILL.md"
 missing=0
 
 expect() { # expect DOC NAME
@@ -19,7 +19,7 @@ done
 for dir in "$repo"/skills/*/; do
   skill=$(basename "$dir")
   expect "$repo/README.md" "$skill"
-  [ "$skill" = using-lapidix-skills ] || expect "$catalog" "$skill"
+  [ "$skill" = using-lapidix-devkit ] || expect "$catalog" "$skill"
 done
 
 [ "$missing" -eq 0 ] && echo "every rule and skill is listed in README.md and the catalog"

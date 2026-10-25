@@ -7,7 +7,7 @@ description: Use when reviewing frontend changes against the frontend rules, bef
 
 A convention review: does the changed code follow `rules/frontend/*.md` and `rules/typescript/conventions.md`? Bugs are another review's job. Mechanical checks run first; the judgment checks in `checklist.md` need you to read the code.
 
-The rule files named here are in the project's `.claude/rules/{area}/` (`rules/frontend/testing.md` is `.claude/rules/frontend/testing.md`). When the project lacks one and this skill came from the lapidix-skills plugin, read it from `${CLAUDE_PLUGIN_ROOT}/rules/` instead and say in your report that the project does not have it; the `installing-rules` skill copies it in.
+The rule files named here are in the project's `.claude/rules/{area}/` (`rules/frontend/testing.md` is `.claude/rules/frontend/testing.md`). When the project lacks one, read the copy that ships with this skill, in the `rules/` folder two levels above this skill's folder, and say in your report that the project does not have it; the `installing-rules` skill copies it in.
 
 ## Steps
 

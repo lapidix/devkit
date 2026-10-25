@@ -7,7 +7,7 @@ description: Use when adding or repairing an architecture check — dependency-c
 
 The boundaries come from the frontend layer rules (`rules/frontend/*.md`), the server architecture rules (`rules/server/architecture.md`, `rules/go-server/architecture.md`) and the monorepo rules (`workspace.md`, `tooling.md`). This folder holds the checks that enforce them:
 
-The rule files named here are in the project's `.claude/rules/{area}/` (`rules/frontend/testing.md` is `.claude/rules/frontend/testing.md`). When the project lacks one and this skill came from the lapidix-skills plugin, read it from `${CLAUDE_PLUGIN_ROOT}/rules/` instead and say in your report that the project does not have it; the `installing-rules` skill copies it in.
+The rule files named here are in the project's `.claude/rules/{area}/` (`rules/frontend/testing.md` is `.claude/rules/frontend/testing.md`). When the project lacks one, read the copy that ships with this skill, in the `rules/` folder two levels above this skill's folder, and say in your report that the project does not have it; the `installing-rules` skill copies it in.
 
 | File | Rules |
 |---|---|

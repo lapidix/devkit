@@ -1,34 +1,43 @@
-# skills
+# lapidix devkit
 
-Claude Code rules and skills for building web apps on one architecture: a layered React or Next.js frontend, NestJS or Go servers built domain first around ports and adapters, and one HTTP contract between them.
+Rules and skills for Claude Code and Codex, for building web apps on one architecture: a layered React or Next.js frontend, NestJS or Go servers built domain first around ports and adapters, and one HTTP contract between them.
 
-- **Rules** are the conventions. Each has `paths:` frontmatter, so Claude Code loads it only while it works on matching files: folder structure, naming, errors, transactions, tests.
+- **Rules** are the conventions. Each has `paths:` frontmatter, so Claude Code loads it only while it works on matching files, and Codex reads an index of them in `AGENTS.md`: folder structure, naming, errors, transactions, tests.
 - **Skills** are the procedures: scaffold a frontend entity or a server module, review a change against the rules, set up architecture checks, write a pull request.
 
 The examples are run, not just written: the frontend slice and the NestJS and Go example modules compile and pass their tests (database tests against PostgreSQL included), and the review and architecture checks were tried against planted violations.
 
 ## Install
 
-### Skills: a Claude Code plugin
+### Skills in Claude Code
 
 ```
-/plugin marketplace add lapidix/skills
-/plugin install lapidix-skills@lapidix
+/plugin marketplace add lapidix/devkit
+/plugin install devkit@lapidix
 ```
 
-The skills then work in every project. Claude Code picks one when a task matches its description, or you call it as `/lapidix-skills:<skill>`.
+The skills then work in every project. Claude Code picks one when a task matches its description, or you call it as `/devkit:<skill>`.
 
-Each commit here is a new version. Update with `claude plugin marketplace update lapidix` and `claude plugin update lapidix-skills@lapidix`, or turn on auto-update under `/plugin` → Marketplaces; it is off by default for marketplaces you add.
+Each commit here is a new version. Update with `claude plugin marketplace update lapidix` and `claude plugin update devkit@lapidix`, or turn on auto-update under `/plugin` → Marketplaces; it is off by default for marketplaces you add.
+
+### Skills in Codex
+
+```bash
+codex plugin marketplace add lapidix/devkit
+codex plugin add devkit@lapidix
+```
+
+Codex reads the same marketplace file. Start a new session to use the skills, and refresh the marketplace with `codex plugin marketplace upgrade`.
 
 ### Rules: copied into each project
 
 A plugin cannot carry rules, and Claude Code does not load a path-scoped rule through a symlink that leaves the project, so rules are copied into the project's `.claude/rules/`.
 
-With the plugin installed, ask Claude to install the rules. The `installing-rules` skill reads the project's manifests, picks the areas below, runs `copy-rules.sh` from the plugin and fits the globs. Without the plugin, run the script from a clone:
+With the plugin installed, ask the agent to install the rules. The `installing-rules` skill reads the project's manifests, picks the areas below, runs `copy-rules.sh` from the plugin and fits the globs. Without the plugin, run the script from a clone:
 
 ```bash
-git clone https://github.com/lapidix/skills ~/skills
-bash ~/skills/scripts/copy-rules.sh ~/work/app typescript frontend api
+git clone https://github.com/lapidix/devkit ~/devkit
+bash ~/devkit/scripts/copy-rules.sh ~/work/app typescript frontend api
 ```
 
 | Project | Copy |
@@ -43,17 +52,18 @@ For the database, PostgreSQL is `database/postgres` with `database/prisma` (Nest
 - `copy-rules.sh` takes areas (`frontend`) or single files (`database/postgres`), and lists the areas the copied rules cite that the project lacks, with the files that cite them; copy the ones that apply.
 - Run it again after a `git pull`: new files are added, unchanged ones skipped, and files that differ are shown as a diff and left alone (exit code 2) until you pass `--update`, which overwrites them along with any edits made in the project.
 - In a monorepo, pass `--prefix <app folder>` for each app a set of areas is for (`--prefix apps/web . frontend`); every `**/` glob goes under that folder, so one app's rules do not load while you work on another. Root areas (`monorepo`, `git`) take no prefix. Rerun with the same flags, and files you have not edited compare as unchanged.
-- Each skill reads its rules from the project's `.claude/rules/`. When the project lacks one, a skill from the plugin reads the plugin's copy and says so in its report.
+- For Codex, which does not read `.claude/rules/`, add `--agents-md` to the first command. The script writes a marked index of the copied rules and their paths into the project's `AGENTS.md` and refreshes it on every later run; the rest of `AGENTS.md` stays as it is.
+- Each skill reads its rules from the project's `.claude/rules/`. When the project lacks one, it reads the copy that ships with it and says so in its report.
 
 ### Git rules: your own machine
 
 `rules/git/` (commit messages and pull requests) has no `paths:`, so it applies in every project. It is opinionated (a fixed commit format, no AI attribution in commits or PRs), so read it before you adopt it. To use it on your machine:
 
 ```bash
-bash ~/skills/scripts/link-user.sh
+bash ~/devkit/scripts/link-user.sh
 ```
 
-This links `~/.claude/rules/git` to the clone, so a `git pull` updates it (`CLAUDE_CONFIG_DIR`, if set, replaces `~/.claude`). The `writing-pull-requests` skill follows `rules/git/pull-request.md`.
+This links `~/.claude/rules/git` to the clone, so a `git pull` updates it (`CLAUDE_CONFIG_DIR`, if set, replaces `~/.claude`). The `writing-pull-requests` skill follows `rules/git/pull-request.md`. Codex has no folder for user-level rules; copy `git` into a project with `--agents-md` to use it there.
 
 ## What the rules assume
 
@@ -121,7 +131,7 @@ This links `~/.claude/rules/git` to the clone, so a `git pull` updates it (`CLAU
 
 | Skill | Use it to |
 |---|---|
-| `using-lapidix-skills` | Find the rule or skill for a task; Claude Code reaches for it when it is unsure which one applies |
+| `using-lapidix-devkit` | Find the rule or skill for a task; Claude Code reaches for it when it is unsure which one applies |
 | `installing-rules` | Copy the rules a project needs into its `.claude/rules/` and fit their globs, or update them |
 | `scaffolding-entity-slices` | Add a frontend entity slice for an API resource |
 | `auditing-entity-slices` | Check entity slices against the entity rules |
@@ -135,7 +145,7 @@ This links `~/.claude/rules/git` to the clone, so a `git pull` updates it (`CLAU
 
 ## Contributing
 
-A new or renamed rule or skill goes into the tables above and into the catalog in `skills/using-lapidix-skills/SKILL.md`. Before a pull request, run:
+A new or renamed rule or skill goes into the tables above and into the catalog in `skills/using-lapidix-devkit/SKILL.md`. Before a pull request, run:
 
 ```bash
 bash scripts/check-catalog.sh

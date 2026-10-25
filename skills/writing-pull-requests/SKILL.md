@@ -7,7 +7,7 @@ description: Use when opening a pull request, or writing or rewriting a PR title
 
 The format lives in the git rules (`pull-request.md`, `commit.md`), which load in every session. This skill is the procedure that produces a PR in that format.
 
-The git rules are in the project's `.claude/rules/git/` or in `~/.claude/rules/git/`. When neither has them and this skill came from the lapidix-skills plugin, read them from `${CLAUDE_PLUGIN_ROOT}/rules/git/`.
+The git rules are in the project's `.claude/rules/git/` or in `~/.claude/rules/git/`. When neither has them, read the copy in `rules/git/` two levels above this skill's folder.
 
 ## Steps
 

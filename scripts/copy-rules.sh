@@ -2,25 +2,29 @@
 # Copies rule areas into a project's .claude/rules/{area}/. They are copied,
 # not linked: Claude Code does not load a rule with paths: through a symlink
 # that leaves the project.
-# Usage: bash scripts/copy-rules.sh [--update] [--prefix <app folder>]... <project> <area | area/file>...
+# Usage: bash scripts/copy-rules.sh [--update] [--prefix <app folder>]... [--agents-md] <project> <area | area/file>...
 #   --prefix apps/web puts each "**/…" glob under apps/web, for a monorepo app;
 #   given twice, each glob is listed once per app. Rerun with the same flags.
+#   --agents-md writes an index of the copied rules into the project's AGENTS.md
+#   for Codex, which does not read .claude/rules/; later runs keep it current.
 set -euo pipefail
 
 repo=$(cd "$(dirname "$0")/.." && pwd)
 
 usage() {
-  echo "usage: bash scripts/copy-rules.sh [--update] [--prefix <app folder>]... <project> <area | area/file>..." >&2
+  echo "usage: bash scripts/copy-rules.sh [--update] [--prefix <app folder>]... [--agents-md] <project> <area | area/file>..." >&2
   echo "areas: $(cd "$repo/rules" && ls -d */ | tr -d / | tr '\n' ' ')" >&2
   exit 1
 }
 
 update=false
+agents_md=false
 prefixes=()
 while [ $# -gt 0 ]; do
   case $1 in
     --update) update=true; shift ;;
     --prefix) [ $# -ge 2 ] || usage; prefixes+=("${2%/}"); shift 2 ;;
+    --agents-md) agents_md=true; shift ;;
     -*) usage ;;
     *) break ;;
   esac
@@ -91,6 +95,43 @@ missing=$(grep -oE 'rules/[a-z-]+/' "$project/.claude/rules"/*/*.md 2>/dev/null 
 if [ -n "$missing" ]; then
   echo "areas the copied rules cite that this project does not have; copy the ones that apply:"
   echo "$missing"
+fi
+
+# Codex reads AGENTS.md, not .claude/rules/: keep a marked index of every copied rule there,
+# created by --agents-md and refreshed on every later run. The rest of AGENTS.md is the project's.
+agents="$project/AGENTS.md"
+start='<!-- lapidix-rules:start -->'
+end='<!-- lapidix-rules:end -->'
+if $agents_md || grep -qF "$start" "$agents" 2>/dev/null; then
+  index=$(mktemp)
+  {
+    echo "$start"
+    echo "## Rules"
+    echo
+    echo "Before you edit a file, read every rule below whose paths match it. A rule without paths applies to every task. lapidix devkit's copy-rules.sh writes this block; edits to it are replaced."
+    echo
+    echo "| Rule | Paths |"
+    echo "|---|---|"
+    for file in "$project/.claude/rules"/*/*.md; do
+      globs=$(awk 'NR == 1 && $0 == "---" { front = 1; next }
+        front && $0 == "---" { exit }
+        front && /^  - "/ { glob = $0; sub(/^  - "/, "", glob); sub(/"$/, "", glob); printf "%s`%s`", (n++ ? ", " : ""), glob }' "$file")
+      echo "| \`${file#"$project"/}\` | ${globs:-every task} |"
+    done
+    echo "$end"
+  } > "$index"
+  if grep -qF "$start" "$agents" 2>/dev/null; then
+    awk -v start="$start" -v end="$end" -v index_file="$index" '
+      $0 == start { while ((getline line < index_file) > 0) print line; skip = 1; next }
+      $0 == end { skip = 0; next }
+      !skip { print }' "$agents" > "$agents.tmp"
+    mv "$agents.tmp" "$agents"
+    echo "indexed  $agents (refreshed)"
+  else
+    { if [ -s "$agents" ]; then echo; fi; cat "$index"; } >> "$agents"
+    echo "indexed  $agents"
+  fi
+  rm -f "$index"
 fi
 
 if [ "$differs" -gt 0 ]; then

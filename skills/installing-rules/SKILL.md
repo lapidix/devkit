@@ -1,11 +1,11 @@
 ---
 name: installing-rules
-description: Use when adding the lapidix/skills rules to a project or updating them, or when another skill reports that the project lacks a rule.
+description: Use when adding the lapidix devkit rules to a project or updating them, or when another skill reports that the project lacks a rule.
 ---
 
 # Installing rules
 
-Rules are copied into the project's `.claude/rules/`, not linked: Claude Code loads a rule with `paths:` only from a real file inside the project. `copy-rules.sh` does the copying. It is at `${CLAUDE_PLUGIN_ROOT}/scripts/copy-rules.sh` when this skill came from the lapidix-skills plugin, and at `scripts/copy-rules.sh` in a clone of lapidix/skills.
+Rules are copied into the project's `.claude/rules/`, not linked: Claude Code loads a rule with `paths:` only from a real file inside the project. `copy-rules.sh` does the copying. It is in the `scripts/` folder two levels above this skill's folder, in the plugin and in a clone of lapidix/devkit alike; a skill copied into a project has no `scripts/` there, so use a clone. Codex does not read `.claude/rules/`, so for a project worked on with Codex the script also keeps an index of the copied rules in the project's `AGENTS.md`.
 
 ## Steps
 
@@ -43,8 +43,8 @@ Rules are copied into the project's `.claude/rules/`, not linked: Claude Code lo
    bash <copy-rules.sh> . monorepo
    ```
 
-   In a single-app project, one command without `--prefix` copies everything. Exit 1 is a typo in an area or the folder; the message lists the areas. Each run ends by listing areas the copied rules cite that the project lacks, each with the files that cite it. Read the list after the last command, and add an area only when it applies to an app's stack: `go-server (cited by api/contract.md)` in a NestJS project is a mention for comparison, not a need. Done when every confirmed area is in `.claude/rules/` and the commands are written down for the report.
+   In a single-app project, one command without `--prefix` copies everything. When the project is worked on with Codex (it has an `AGENTS.md`, or the user says so), add `--agents-md` to the first command: the script writes a marked index of the copied rules and their paths into `AGENTS.md` and refreshes it on every later run, leaving the rest of the file alone. Exit 1 is a typo in an area or the folder; the message lists the areas. Each run ends by listing areas the copied rules cite that the project lacks, each with the files that cite it. Read the list after the last command, and add an area only when it applies to an app's stack: `go-server (cited by api/contract.md)` in a NestJS project is a mention for comparison, not a need. Done when every confirmed area is in `.claude/rules/` and the commands are written down for the report.
 
-4. **Updating.** Rerun the same commands; the prefixes show in the copied rules' globs if the earlier report is gone. `same` needs nothing. A `differs` file has changed in lapidix/skills or been edited in the project (exit code 2): show the user its diff, then take the change with `--update` on that command, or keep the project's edit. A cited area left out at install stays out unless the stack has changed. Done when every differing file is updated or kept by the user's choice.
+4. **Updating.** Rerun the same commands; the prefixes show in the copied rules' globs if the earlier report is gone. `same` needs nothing. A `differs` file has changed in lapidix devkit or been edited in the project (exit code 2): show the user its diff, then take the change with `--update` on that command, or keep the project's edit. A cited area left out at install stays out unless the stack has changed. Done when every differing file is updated or kept by the user's choice.
 
 5. **Report.** The commands you ran, what was added, updated or kept, and the cited areas left out with the reason.

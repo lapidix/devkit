@@ -3,12 +3,13 @@
   "owner": {
     "name": "lapidix"
   },
-  "description": "Claude Code rules and skills for React/Next.js, NestJS and Go apps built on one architecture",
+  "description": "Rules and skills for Claude Code and Codex: React/Next.js, NestJS and Go apps built on one architecture",
   "plugins": [
     {
-      "name": "lapidix-skills",
+      "name": "devkit",
+      "displayName": "lapidix devkit",
       "source": "./",
-      "description": "Scaffold, review and check React/Next.js, NestJS and Go code against the rules in lapidix/skills",
+      "description": "Scaffold, review and check React/Next.js, NestJS and Go code against the lapidix devkit rules",
       "category": "development",
       "tags": [
         "architecture",

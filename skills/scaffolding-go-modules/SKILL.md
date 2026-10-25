@@ -7,7 +7,7 @@ description: Use when adding a new domain module to a Go server that follows the
 
 The structure and conventions live in the Go rules (`rules/go/*.md`, `rules/go-server/*.md`), which load as you touch the matching files. Read `rules/go-server/architecture.md`, `domain.md`, `application.md` and `adapters.md` before step 3, and the database rules (`rules/database/conventions.md`, `postgres.md`, `sqlc.md`) before step 3.10. `example-module.md` in this folder is one complete module to copy from.
 
-The rule files named here are in the project's `.claude/rules/{area}/` (`rules/frontend/testing.md` is `.claude/rules/frontend/testing.md`). When the project lacks one and this skill came from the lapidix-skills plugin, read it from `${CLAUDE_PLUGIN_ROOT}/rules/` instead and say in your report that the project does not have it; the `installing-rules` skill copies it in.
+The rule files named here are in the project's `.claude/rules/{area}/` (`rules/frontend/testing.md` is `.claude/rules/frontend/testing.md`). When the project lacks one, read the copy that ships with this skill, in the `rules/` folder two levels above this skill's folder, and say in your report that the project does not have it; the `installing-rules` skill copies it in.
 
 ## Steps
 

@@ -1,11 +1,11 @@
 ---
-name: using-lapidix-skills
-description: Use when starting work in a project built on the lapidix/skills rules, or when unsure which of its rules or skills covers a task.
+name: using-lapidix-devkit
+description: Use when starting work in a project built on the lapidix devkit rules, or when unsure which of its rules or skills covers a task.
 ---
 
-# Using lapidix skills
+# Using lapidix devkit
 
-Rules are the conventions; skills are the procedures. A rule the project installed is in its `.claude/rules/{area}/` and loads on its own when you touch a file its `paths:` match. To read one before that, or one the project lacks, open it there or, when this skill came from the lapidix-skills plugin, at `${CLAUDE_PLUGIN_ROOT}/rules/{area}/`, and say in your report that the project lacks it. A project with no rules yet gets them through `installing-rules`.
+Rules are the conventions; skills are the procedures. A rule the project installed is in its `.claude/rules/{area}/`. Claude Code loads it on its own when you touch a file its `paths:` match; Codex does not, so the project's `AGENTS.md` lists each rule with its paths, and you read the ones that match the files you change. A rule the project lacks is in the `rules/` folder two levels above this skill's folder; read it there and say in your report that the project lacks it. A project with no rules yet gets them through `installing-rules`.
 
 ## Tasks and skills
 
