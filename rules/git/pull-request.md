@@ -2,6 +2,8 @@
 
 ## Issue first
 
+For a title or body draft, use the available issue information and mark a missing issue number as unresolved. Creating an issue and preparing a branch are part of opening a PR, not prerequisites for drafting its text. Editing an existing PR's title or body keeps its issue and branch unless the user requests a change.
+
 Every PR resolves or references a GitHub issue. When the work has no issue yet, create one with `gh issue create` before branching, then branch from the base as:
 
 ```
