@@ -5,11 +5,17 @@ description: Use when opening a pull request, or writing or rewriting a PR title
 
 # Writing pull requests
 
-The format lives in the git rules (`pull-request.md`, `commit.md`), which load in every session. This skill is the procedure that produces a PR in that format.
+The format lives in the git rules (`pull-request.md`, `commit.md`). This skill produces a draft or a published PR in that format, according to the user's request.
 
 The git rules are in the project's `.claude/rules/git/` or in `~/.claude/rules/git/`. When neither has them, read the copy in `rules/git/` two levels above this skill's folder.
 
-## Steps
+## Choose the requested output
+
+- **Title or body only:** Read the diff and available verification results, follow the repository's template and the git rules, and return the requested text. Use an existing issue number when known; otherwise mark it as missing rather than inventing one. Stop after the draft: do not create an issue, change branches, push commits, or create or edit a PR.
+- **Edit an existing PR:** Update only the requested title or body of that PR, then verify the saved text. Keep its issue and branch unless the user asks to change them.
+- **Open a PR:** Follow the publishing steps below. A request to open a PR authorizes publishing; do not ask for the same permission again.
+
+## Publishing steps
 
 1. **Issue.** Find the issue this work resolves (`gh issue list --search "<keywords>"`, or ask). If none exists, create one with `gh issue create` and note its number. Done when you hold an issue number `N`.
 
