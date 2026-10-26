@@ -11,4 +11,5 @@ What changed for projects that use these rules and skills, newest first. Every c
 
 ### Fixed
 
+- `scaffolding-server-modules` example: two test names held an apostrophe inside a single-quoted string, so `nickname.vo.test.ts` and `user.mapper.test.ts` did not parse.
 - `frontend/entity-data-access.md`: when `API_BASE_URL` is a path, `bearerAuth`'s `tokenOrigins` lists `location.origin`; the base URL itself threw a `TypeError`. A refresh request through `httpClient` passes `meta: { bearerAuth: false }`; one sent after an `await` in `refreshFn` hung on a 401.

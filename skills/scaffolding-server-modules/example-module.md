@@ -86,7 +86,7 @@ describe('Nickname', () => {
     expect(() => Nickname.create('Kim Lee')).toThrow(UserInvalidNicknameError);
   });
 
-  it('restores a stored nickname even when today's rules reject it', () => {
+  it("restores a stored nickname even when today's rules reject it", () => {
     expect(Nickname.restore('Kim Lee').value).toBe('Kim Lee');
   });
 });
@@ -468,7 +468,7 @@ describe('UserMapper', () => {
     expect(UserMapper.toPersistence(user).create).toEqual(stored);
   });
 
-  it('restores an old nickname that today's rules reject, without checking it', () => {
+  it("restores an old nickname that today's rules reject, without checking it", () => {
     expect(UserMapper.toDomain({ ...row, nickname: 'Old Name' }).toSnapshot().nickname).toBe('Old Name');
   });
 });
