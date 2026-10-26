@@ -106,7 +106,8 @@ export const apiErrors = createPlugin({
 - `unwrap` lives here because arthron returns the `Response` as the server sent it; opening a backend's response format is the project's job.
 - `apiErrors` is middleware placed before `retry()`, so it runs once per call, after the retries. An error interceptor would run on every failed attempt, including one a retry then recovers.
 - `ApiError` carries `status`, `errorCode` and `requestId`; its `message` is the server's `message`, for logs. `isApiError` narrows to it. arthron's `description` is not used: what users read is chosen from `errorCode`, never taken from the server.
-- With bearer tokens, add `bearerAuth({ tokenOrigins: [ENV.API_BASE_URL], accessTokenFn, refreshFn })` after `apiErrors`; with cookie sessions, set `credentials: 'include'` instead.
+- With bearer tokens, add `bearerAuth({ tokenOrigins: [ENV.API_BASE_URL], accessTokenFn, refreshFn })` after `apiErrors`; with cookie sessions, set `credentials: 'include'` instead. `tokenOrigins` takes absolute URLs: when `API_BASE_URL` is a path (`/api` behind a dev proxy or a rewrite), the requests go to the page's origin, so list `location.origin`.
+- The refresh request, when it goes through `httpClient`, passes `meta: { bearerAuth: false }`. arthron exempts on its own only a request started before `refreshFn`'s first `await`; one started after it carries the expired token, and on a 401 (an expired refresh token, for one) it waits for its own refresh, which never ends.
 
 What the client guarantees:
 
