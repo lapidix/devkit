@@ -63,7 +63,7 @@ export const URLS = {
 
 ## HTTP client
 
-The shared client is an arthron 2 client, built once in `shared/libs/http` (or the common package). That folder is the only code that imports `arthron` and the only code that knows the standard response (`rules/api/contract.md`); slices import `httpClient`, `HttpClient` and the helpers below from it.
+The shared client is an arthron 2.1 (or later) client, built once in `shared/libs/http` (or the common package). That folder is the only code that imports `arthron` and the only code that knows the standard response (`rules/api/contract.md`); slices import `httpClient`, `HttpClient` and the helpers below from it. arthron's whole API is in `node_modules/arthron/llms.txt`; read it before using an option this file does not show.
 
 ```ts
 // shared/libs/http/http.client.ts
@@ -106,7 +106,8 @@ export const apiErrors = createPlugin({
 - `unwrap` lives here because arthron returns the `Response` as the server sent it; opening a backend's response format is the project's job.
 - `apiErrors` is middleware placed before `retry()`, so it runs once per call, after the retries. An error interceptor would run on every failed attempt, including one a retry then recovers.
 - `ApiError` carries `status`, `errorCode` and `requestId`; its `message` is the server's `message`, for logs. `isApiError` narrows to it. arthron's `description` is not used: what users read is chosen from `errorCode`, never taken from the server.
-- With bearer tokens, add `bearerAuth({ tokenOrigins: [ENV.API_BASE_URL], accessTokenFn, refreshFn })` after `apiErrors`; with cookie sessions, set `credentials: 'include'` instead.
+- With bearer tokens, add `bearerAuth({ tokenOrigins: [ENV.API_BASE_URL], accessTokenFn, refreshFn })` after `apiErrors`; with cookie sessions, set `credentials: 'include'` instead. `tokenOrigins` takes absolute URLs: when `API_BASE_URL` is a path (`/api` behind a dev proxy or a rewrite), the requests go to the page's origin, so list `location.origin`.
+- The refresh request, when it goes through `httpClient`, passes `meta: { bearerAuth: false }`. arthron exempts on its own only a request started before `refreshFn`'s first `await`; one started after it carries the expired token, and on a 401 (an expired refresh token, for one) it waits for its own refresh, which never ends.
 
 What the client guarantees:
 
@@ -116,7 +117,7 @@ What the client guarantees:
 
 Why: an id or name containing `/`, `?` or `#` otherwise calls a different endpoint or truncates the request.
 
-- **Server errors**: `apiErrors` turns an error response into an `ApiError` carrying the status and the server's `errorCode`. Use cases compare `error.errorCode` and never read a body.
+- **Server errors**: `apiErrors` turns an error response into an `ApiError` carrying the status and the server's `errorCode`. Use cases compare `error.errorCode` and never read a body. arthron 2.0 rejected some error responses with a `TypeError` or a `RangeError` instead (a status text that is not Latin-1, such as `500 실패` under Node, or a status past 599), and `apiErrors` let them through; 2.1 makes them `ArthronError`s.
 - **Unreachable server**: a request that never reached the server stays an `ArthronError` with `status: 0` (a `TimeoutError` when the project adds `timeout()`), so it is told apart from an `ApiError`.
 - **What the client handles itself** (`retry()`, `bearerAuth`'s refresh on 401) is not handled again by adapters, use cases or screens. Which failures the client handles is the project's decision.
 

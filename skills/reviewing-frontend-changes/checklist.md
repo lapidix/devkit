@@ -21,7 +21,8 @@ Apply the sections whose rule files cover the file under review. Each item names
 - `libs/` holds the HTTP client, library clients and setup, and domain-free behavior; pure functions go in `utils/`, drawn things in `ui/`.
 - Environment variables are read only in `config/env.config.ts`.
 - Shared error classes live in `libs/error/common.errors.ts`; entity errors extend `NotFoundError` or `ValidationError` where they fit.
-- `libs/http` builds `httpClient` with arthron 2 or later, with `apiErrors` first in its plugins, and exports `HttpClient`, `unwrap`, `ApiError` and `isApiError`; a project on another client meets the guarantees listed in `entity-data-access.md` ("HTTP client").
+- `libs/http` builds `httpClient` with arthron 2.1 or later, with `apiErrors` first in its plugins, and exports `HttpClient`, `unwrap`, `ApiError` and `isApiError`; a project on another client meets the guarantees listed in `entity-data-access.md` ("HTTP client").
+- With `bearerAuth`, `tokenOrigins` lists absolute origins (the page's origin when `API_BASE_URL` is a path), and a refresh request through `httpClient` passes `meta: { bearerAuth: false }`.
 
 ## entities (`entities.md`, `entity-data-access.md`)
 
