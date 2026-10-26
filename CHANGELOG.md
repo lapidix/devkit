@@ -8,6 +8,7 @@ What changed for projects that use these rules and skills, newest first. Every c
 
 - `git/commit.md`: a commit carries a DCO `Signed-off-by` line when the repository requires one, as a DCO check on its pull requests or its contributing guide does. The rule used to leave it out everywhere, which failed those checks.
 - arthron 2.1 or later is required by `frontend/entity-data-access.md`, `server/adapters.md`, `scaffolding-entity-slices` and both review checklists. Under 2.0 a response whose status text is not Latin-1 (`500 실패`, under Node) or whose status is past 599 rejected with a `TypeError` or a `RangeError` instead of an `ArthronError`, so `apiErrors` let it through. The rules also point to `node_modules/arthron/llms.txt`.
+- `setting-up-architecture-checks`: the dependency-cruiser check is verified to cruise more than 0 modules. With TypeScript 7 and no `@swc/core`, dependency-cruiser 18.7 reads nothing and still passes. The Go architecture test runs with `-count=1`: a cached run passed after a violating file was added.
 
 ### Fixed
 
