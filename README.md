@@ -5,7 +5,7 @@ Rules and skills for Claude Code and Codex, for building web apps on one archite
 - **Rules** are the conventions. Each has `paths:` frontmatter, so Claude Code loads it only while it works on matching files, and Codex reads an index of them in `AGENTS.md`: folder structure, naming, errors, transactions, tests.
 - **Skills** are the procedures: install the rules, scaffold a frontend entity or a server module, review a change against the rules, set up architecture checks, write a pull request.
 
-The examples are run, not just written: the frontend slice and the NestJS and Go example modules compile and pass their tests (database tests against PostgreSQL included), and the review and architecture checks were tried against planted violations.
+The examples are run, not just written. `examples/` builds the frontend slice and the NestJS and Go example modules into projects with pinned dependencies, and CI checks them on every pull request: tsc and Vitest for the two TypeScript examples; sqlc, golangci-lint, the race detector, the database tests against PostgreSQL and govulncheck for Go; and the architecture checks against planted violations for all three. The review checks were tried against planted violations.
 
 ## Install
 

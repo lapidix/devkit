@@ -35,7 +35,7 @@ jobs:
         run: claude plugin validate ./skills
       - name: Shell scripts
         if: ${{ !cancelled() }}
-        run: shellcheck scripts/*.sh
+        run: shellcheck scripts/*.sh examples/*.sh examples/*/check.sh
       - name: Whitespace
         if: ${{ !cancelled() && github.event_name == 'pull_request' }}
         env:
