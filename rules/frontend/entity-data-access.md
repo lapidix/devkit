@@ -63,7 +63,7 @@ export const URLS = {
 
 ## HTTP client
 
-The shared client is an arthron 2 client, built once in `shared/libs/http` (or the common package). That folder is the only code that imports `arthron` and the only code that knows the standard response (`rules/api/contract.md`); slices import `httpClient`, `HttpClient` and the helpers below from it.
+The shared client is an arthron 2.1 (or later) client, built once in `shared/libs/http` (or the common package). That folder is the only code that imports `arthron` and the only code that knows the standard response (`rules/api/contract.md`); slices import `httpClient`, `HttpClient` and the helpers below from it. arthron's whole API is in `node_modules/arthron/llms.txt`; read it before using an option this file does not show.
 
 ```ts
 // shared/libs/http/http.client.ts
@@ -116,7 +116,7 @@ What the client guarantees:
 
 Why: an id or name containing `/`, `?` or `#` otherwise calls a different endpoint or truncates the request.
 
-- **Server errors**: `apiErrors` turns an error response into an `ApiError` carrying the status and the server's `errorCode`. Use cases compare `error.errorCode` and never read a body.
+- **Server errors**: `apiErrors` turns an error response into an `ApiError` carrying the status and the server's `errorCode`. Use cases compare `error.errorCode` and never read a body. arthron 2.0 rejected some error responses with a `TypeError` or a `RangeError` instead (a status text that is not Latin-1, such as `500 실패` under Node, or a status past 599), and `apiErrors` let them through; 2.1 makes them `ArthronError`s.
 - **Unreachable server**: a request that never reached the server stays an `ArthronError` with `status: 0` (a `TimeoutError` when the project adds `timeout()`), so it is told apart from an `ApiError`.
 - **What the client handles itself** (`retry()`, `bearerAuth`'s refresh on 401) is not handled again by adapters, use cases or screens. Which failures the client handles is the project's decision.
 

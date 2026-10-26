@@ -40,7 +40,7 @@ Apply the sections whose rule files cover the file under review. Each item names
 - Responses come from `{D}ResponseDto.from(result)` built on the use case result; controllers import nothing from the domain except `{d}.const.ts`.
 - Controllers make no business decisions, catch no errors and build no standard response.
 - Repositories query through the client that joins the open transaction, map rows through the mapper, and turn constraint violations they recognize into domain errors.
-- An external HTTP API is called through its arthron client in `src/infrastructure/http/`, which sets `timeout()`; the adapter turns only the failures it recognizes into domain results or domain errors and rethrows the rest.
+- An external HTTP API is called through its arthron client (2.1 or later) in `src/infrastructure/http/`, which sets `timeout()`; the adapter turns only the failures it recognizes into domain results or domain errors and rethrows the rest.
 - Routes are protected unless marked `@Public()`; abusable routes have rate limits.
 
 ## Database (`database/conventions.md`, the engine's and the ORM's files)

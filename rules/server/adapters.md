@@ -91,6 +91,7 @@ export class PrismaUserRepository extends UserRepository {
 - An adapter for another module calls that module's public use case from its `index.ts` (`rules/server/architecture.md`).
 - An optional integration (payments, maps) whose configuration is absent still lets the server start. Its adapter throws a clear error when called, so only that feature fails (`rules/server/runtime.md`).
 - **An external HTTP API** is called through an arthron client in `src/infrastructure/http/{service}.client.ts`, built once from `ENV` with the service's base URL, its credentials and `timeout()`. The client's headers go to its `baseURL`'s origin only, so the credentials cannot reach another host; fetch has no timeout of its own, so without one a slow service holds the request open. The module hands the client to the adapter: `{ provide: PaymentGateway, useFactory: () => new TossPaymentGateway(tossClient) }`.
+- The client is arthron 2.1 or later. Under 2.0, a response whose status text is not Latin-1 (`500 실패`) failed with a `TypeError` instead of an `ArthronError`, and once `timeout()` was on, so did a `200`. arthron's whole API is in `node_modules/arthron/llms.txt`.
 - The adapter turns the failures it recognizes into a domain result or a domain error, by status or by the service's own code in `error.payload`, and rethrows the rest. The service's wire format stays in the adapter.
 
 ```ts

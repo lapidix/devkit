@@ -67,8 +67,8 @@ This links `~/.claude/rules/git` to the clone, so a `git pull` updates it (`CLAU
 
 ## What the rules assume
 
-- **Frontend**: React with React Compiler, TanStack Query v5, react-hook-form and zod, Tailwind, Vitest; a SPA or Next.js. Layers `app → pages → widgets → features → entities → shared`, with the domain model in `entities`. HTTP goes through [arthron](https://github.com/lapidix/arthron) 2.
-- **NestJS**: modules split into `domain`, `application` and `adapters/{in,out}`; zod DTOs with nestjs-zod; Prisma 7 or Mongoose; transactions through nestjs-cls; pino; Vitest with SWC.
+- **Frontend**: React with React Compiler, TanStack Query v5, react-hook-form and zod, Tailwind, Vitest; a SPA or Next.js. Layers `app → pages → widgets → features → entities → shared`, with the domain model in `entities`. HTTP goes through [arthron](https://lapidix.github.io/arthron/) 2.1 or later.
+- **NestJS**: modules split into `domain`, `application` and `adapters/{in,out}`; zod DTOs with nestjs-zod; Prisma 7 or Mongoose; transactions through nestjs-cls; external APIs through arthron 2.1 or later; pino; Vitest with SWC.
 - **Go**: the same module split under `internal/`; net/http with huma; sqlc, pgx and goose, or the MongoDB driver; caarlos0/env; slog; testify; golangci-lint.
 - **Both servers** follow one HTTP contract (`rules/api/contract.md`): every response carries `result`, `message`, `timestamp`, `requestId` and `errorCode`; a create answers 201 with `{ id }`; a domain error's kind decides the status.
 - **Databases**: UUIDv7 ids created by the application, expand → contract migrations, indexes that follow real queries.

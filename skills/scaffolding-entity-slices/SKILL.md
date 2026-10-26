@@ -20,10 +20,10 @@ The rule files named here are in the project's `.claude/rules/{area}/` (`rules/f
    Done when every endpoint has a method, a `{param}` path as the docs write it, and its request and response shape or "none".
 
 2. **HTTP client.** Find the shared client (`shared/libs/http` or the common package) and check it against "HTTP client" in `entity-data-access.md`:
-   - `httpClient` built with arthron 2 or later, with `apiErrors` first in its plugins
+   - `httpClient` built with arthron 2.1 or later, with `apiErrors` first in its plugins
    - `HttpClient`, `unwrap`, `ApiError` and `isApiError` exported
 
-   If one is missing, or arthron is older than 2 (its option names differ, so the adapter code here does not compile), stop and report it; adding it is a separate change, and encoding paths or opening bodies in the adapter is what it replaces. A project on another HTTP client is checked against the guarantees listed in that section instead.
+   If one is missing, or arthron is older than 2.1 (1.x option names differ, so the adapter code here does not compile; 2.0 lets some error responses past `apiErrors`), stop and report it; adding it is a separate change, and encoding paths or opening bodies in the adapter is what it replaces. A project on another HTTP client is checked against the guarantees listed in that section instead.
 
 3. **Files**, in this order, so each file's imports already exist when you write it:
    1. `infrastructure/dto/` — `{d}.dto.ts`, then request and response files only if needed
