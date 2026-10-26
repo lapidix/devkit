@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - name: Install Claude Code
+        run: npm install --global @anthropic-ai/claude-code@2.1.309
+      - name: Catalog
+        if: ${{ !cancelled() }}
+        run: bash scripts/check-catalog.sh
+      - name: Marketplace manifest
+        if: ${{ !cancelled() }}
+        run: claude plugin validate . --strict
+      - name: Skills
+        if: ${{ !cancelled() }}
+        run: claude plugin validate ./skills
+      - name: Shell scripts
+        if: ${{ !cancelled() }}
+        run: shellcheck scripts/*.sh
+      - name: Whitespace
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch --depth=1 origin "$BASE_REF"
+          git diff --check FETCH_HEAD HEAD

@@ -1,0 +1,32 @@
+name: Rule is wrong or out of date
+description: A rule or skill says something that is not true, or no longer true for the library version it names.
+labels: [bug]
+body:
+  - type: input
+    id: file
+    attributes:
+      label: File
+      description: The rule or skill, as its path in this repo.
+      placeholder: rules/frontend/entity-data-access.md
+    validations:
+      required: true
+  - type: textarea
+    id: says
+    attributes:
+      label: What it says
+      description: Quote the sentence or the code.
+    validations:
+      required: true
+  - type: textarea
+    id: true-instead
+    attributes:
+      label: What is true instead
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: The library and version, a link to its changelog or docs, or a short example that fails when it follows the rule.
+    validations:
+      required: true

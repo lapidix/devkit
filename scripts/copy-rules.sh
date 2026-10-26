@@ -13,7 +13,7 @@ repo=$(cd "$(dirname "$0")/.." && pwd)
 
 usage() {
   echo "usage: bash scripts/copy-rules.sh [--update] [--prefix <app folder>]... [--agents-md] <project> <area | area/file>..." >&2
-  echo "areas: $(cd "$repo/rules" && ls -d */ | tr -d / | tr '\n' ' ')" >&2
+  echo "areas: $(for dir in "$repo"/rules/*/; do dir=${dir%/}; printf '%s ' "${dir##*/}"; done)" >&2
   exit 1
 }
 
@@ -128,7 +128,8 @@ if $agents_md || grep -qF "$start" "$agents" 2>/dev/null; then
     mv "$agents.tmp" "$agents"
     echo "indexed  $agents (refreshed)"
   else
-    { if [ -s "$agents" ]; then echo; fi; cat "$index"; } >> "$agents"
+    if [ -s "$agents" ]; then echo >> "$agents"; fi
+    cat "$index" >> "$agents"
     echo "indexed  $agents"
   fi
   rm -f "$index"

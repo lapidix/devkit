@@ -18,7 +18,7 @@ The examples are run, not just written: the frontend slice and the NestJS and Go
 
 The skills then work in every project. Claude Code picks one when a task matches its description, or you call it as `/devkit:<skill>`.
 
-Each commit here is a new version. Update with `claude plugin marketplace update lapidix` and `claude plugin update devkit@lapidix`, or turn on auto-update under `/plugin` → Marketplaces; it is off by default for marketplaces you add.
+Each commit here is a new version; [CHANGELOG.md](CHANGELOG.md) lists the ones that change what a rule or skill asks of a project. Update with `claude plugin marketplace update lapidix` and `claude plugin update devkit@lapidix`, or turn on auto-update under `/plugin` → Marketplaces; it is off by default for marketplaces you add.
 
 ### Skills in Codex
 
@@ -145,13 +145,7 @@ This links `~/.claude/rules/git` to the clone, so a `git pull` updates it (`CLAU
 
 ## Contributing
 
-A new or renamed rule or skill goes into the tables above and into the catalog in `skills/using-lapidix-devkit/SKILL.md`. Before a pull request, run:
-
-```bash
-bash scripts/check-catalog.sh
-claude plugin validate . --strict
-claude plugin validate ./skills
-```
+Issues, pull requests and the DCO sign-off are in [CONTRIBUTING.md](CONTRIBUTING.md). The conventions for editing rules and skills are in [AGENTS.md](AGENTS.md), which coding agents working on this repo read on their own. Security issues are reported privately ([SECURITY.md](SECURITY.md)).
 
 ## License
 
