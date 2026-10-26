@@ -18,7 +18,7 @@ The examples are run, not just written: the frontend slice and the NestJS and Go
 
 The skills then work in every project. Claude Code picks one when a task matches its description, or you call it as `/devkit:<skill>`.
 
-Each commit here is a new version. Update with `claude plugin marketplace update lapidix` and `claude plugin update devkit@lapidix`, or turn on auto-update under `/plugin` → Marketplaces; it is off by default for marketplaces you add.
+Each commit here is a new version; [CHANGELOG.md](CHANGELOG.md) lists the ones that change what a rule or skill asks of a project. Update with `claude plugin marketplace update lapidix` and `claude plugin update devkit@lapidix`, or turn on auto-update under `/plugin` → Marketplaces; it is off by default for marketplaces you add.
 
 ### Skills in Codex
 

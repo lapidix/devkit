@@ -47,4 +47,6 @@ Each commit holds one logical change and passes the repo's checks on its own. Wh
 
 ## Attribution
 
-A commit message contains only the subject and body above. Leave out `Co-Authored-By: Claude …`, `Generated with …`, and any other AI-attribution trailer or line, and leave out DCO `Signed-off-by` lines.
+A commit message contains only the subject and body above, plus a DCO `Signed-off-by` line where the repository requires one. Leave out `Co-Authored-By: Claude …`, `Generated with …`, and any other AI-attribution trailer or line.
+
+A repository requires DCO when a DCO check runs on its pull requests or its contributing guide asks for a sign-off. Sign off with `git commit -s`, which adds the committer's name and email. The line certifies that its author may submit the change, so it names a person, never an agent.
