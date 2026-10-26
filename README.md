@@ -145,13 +145,7 @@ This links `~/.claude/rules/git` to the clone, so a `git pull` updates it (`CLAU
 
 ## Contributing
 
-A new or renamed rule or skill goes into the tables above and into the catalog in `skills/using-lapidix-devkit/SKILL.md`. Before a pull request, run:
-
-```bash
-bash scripts/check-catalog.sh
-claude plugin validate . --strict
-claude plugin validate ./skills
-```
+Issues, pull requests and the DCO sign-off are in [CONTRIBUTING.md](CONTRIBUTING.md). The conventions for editing rules and skills are in [AGENTS.md](AGENTS.md), which coding agents working on this repo read on their own. Security issues are reported privately ([SECURITY.md](SECURITY.md)).
 
 ## License
 

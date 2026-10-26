@@ -1,0 +1,30 @@
+name: Rule or skill request
+description: Something agents get wrong that a rule or skill should cover.
+labels: [enhancement]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - frontend (React, Next.js)
+        - server (NestJS)
+        - go-server
+        - api contract
+        - database
+        - monorepo
+        - git
+        - a new area
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What agents get wrong today
+      description: What they write or do without the rule, ideally with an example.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What the rule or skill should say
