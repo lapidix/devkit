@@ -33,7 +33,7 @@ The rule files named here are in the project's `.claude/rules/{area}/` (`rules/f
    g 'export \*' '/index\.tsx?$'                                          # public API is an explicit list (entities.md, features.md index.ts)
    g 'use(Suspense)?Query\(\{|useMutation\(\{|queryKey: \[' '\.tsx?$'     # inline React Query options or keys (react-query.md)
    g '\.reset\(' 'use[A-Z][A-Za-z]*Form\.ts$'                             # reset in a form hook; check it is not in an effect (forms-rhf-zod.md)
-   g 'disabled=\{[^}]*(isValid|isDirty)' '\.tsx$'                         # submit disabled on validity (forms-rhf-zod.md)
+   g 'disabled=\{[^}]*isDirty' '\.tsx$'                                   # submit disabled on an unchanged form (forms-rhf-zod.md)
    g "\.(min|max|length|regex|email|url)\([^)]*, *['\"]" '\.form\.schema\.ts$'   # literal message instead of {D}_MESSAGES (i18n.md)
    g "(message|successMessage): *['\"]" '\.mutations\.ts$|use[A-Z][A-Za-z]*\.ts$' # literal key passed as data (i18n.md)
    g "\bt\( *['\"][^'\"]+['\"] *, *['\"]" '\.tsx?$'                        # inline fallback text (i18n.md)

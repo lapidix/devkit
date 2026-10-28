@@ -58,7 +58,10 @@ export function useCreateUserForm({ organizationId, onSuccess }: UseCreateUserFo
 
 - `mode: 'onTouched'`: a field is first validated when it loses focus, then on every change. `mode: 'onBlur'` with `reValidateMode: 'onChange'` is not the same: `reValidateMode` applies only after the first submit.
 - An input wrapped in `Controller` wires `onBlur` through its `render` prop, or `onTouched` never fires for it.
-- The submit button is always enabled, except while the request is pending. Don't disable it on `isValid` or `isDirty`: a disabled button does not say what is wrong, while pressing it validates every field, shows every error and focuses the first one.
+- The submit button is off until the form is valid, and while the request is pending: `disabled={!form.formState.isValid || isPending}`. A form that is not filled in has nothing to submit, and an empty required field already shows what is missing.
+- The reason the button is off is always on screen. `isValid` covers every field from the first render, touched or not, and changes as the user types, while a field's error appears only once the field is touched (react-hook-form 7.91, `mode: 'onTouched'`). So each rule that can keep the button off is either a required field left empty or an error shown on a field. A check across fields (an end before its start) puts its error on the field it is about with zod's `path`: `.refine(isOrdered, { path: ['endDate'], error: EVENT_MESSAGES.endBeforeStart })` (zod 4 takes `error`; `message` is deprecated there).
+- The component reads `form.formState.isValid` while it renders; react-hook-form updates only the parts of the form state a component reads.
+- `isDirty` does not disable it: nothing is wrong with an unchanged form, and a button that is off says something is.
 
 ## Sub-components
 
