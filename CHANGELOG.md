@@ -4,6 +4,10 @@ What changed for projects that use these rules and skills, newest first. Every c
 
 ## 2026-10-28
 
+### Fixed
+
+- `go-daemon/outbound.md` and the `scaffolding-go-daemons` example: a server that kept the stream open and stopped answering held the daemon until TCP gave up. The silence check returned from the writer, but the stream had been opened under the session's context, so the reader stayed in `Recv` and the session never ended. The first goroutine to fail now cancels the stream, and silence is checked in its own goroutine so a blocked `Send` does not stop it. The last backoff wait is cut at `ORPHAN_AFTER`, which could otherwise run about 30 seconds late.
+
 ### Added
 
 - `go-daemon` rules for long-running Go programs with no inbound port: `architecture.md`, `runtime.md`, `lifecycle.md`, `outbound.md`, `subprocess.md`, `testing.md`, `contract.md` and `release.md`. They sit on `go/` beside `go-server/`; `installing-rules` copies `go` `go-daemon` for a Go daemon.

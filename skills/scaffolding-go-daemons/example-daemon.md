@@ -476,10 +476,12 @@ func (c *Client) Run(ctx context.Context) error {
 			lastUp = time.Now()
 			wait = minBackoff
 		}
-		if time.Since(lastUp) > c.cfg.OrphanAfter {
+		left := c.cfg.OrphanAfter - time.Since(lastUp)
+		if left <= 0 {
 			return fmt.Errorf("%w: %w", ErrServerGone, err)
 		}
-		delay := rand.N(wait) //nolint:gosec // jitter spreads reconnects; it guards nothing
+		// The last wait ends at the orphan deadline, so the daemon gives up on time, not a backoff later.
+		delay := min(rand.N(wait), left) //nolint:gosec // jitter spreads reconnects; it guards nothing
 		c.lg.WarnContext(ctx, "link down", slog.Any("err", err), slog.Duration("retryIn", delay))
 		wait = min(wait*2, maxBackoff)
 		select {
@@ -519,9 +521,14 @@ func (c *Client) session(ctx context.Context) (registered bool, err error) {
 
 	var lastRecv atomic.Int64
 	lastRecv.Store(time.Now().UnixNano())
-	g, ctx := errgroup.WithContext(ctx)
-	g.Go(func() error { return c.receive(ctx, stream, &lastRecv) })
-	g.Go(func() error { return c.send(ctx, stream, &lastRecv) })
+	g, gctx := errgroup.WithContext(ctx)
+	// The stream was opened under ctx, so cancelling gctx alone would wake neither a blocked Recv nor a
+	// blocked Send: when one goroutine fails, end the stream itself.
+	stop := context.AfterFunc(gctx, cancel)
+	defer stop()
+	g.Go(func() error { return c.receive(gctx, stream, &lastRecv) })
+	g.Go(func() error { return c.send(gctx, stream) })
+	g.Go(func() error { return c.watch(gctx, &lastRecv) })
 	return true, g.Wait()
 }
 
@@ -553,8 +560,25 @@ func (c *Client) receive(ctx context.Context, stream linkv1.LinkService_ConnectC
 	}
 }
 
+// watch ends the session when the server has been silent for ServerTimeout. It runs apart from send,
+// so a Send blocked on a peer that stopped reading does not stop the check.
+func (c *Client) watch(ctx context.Context, lastRecv *atomic.Int64) error {
+	ticker := time.NewTicker(c.cfg.HeartbeatInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+			if silent := time.Since(time.Unix(0, lastRecv.Load())); silent > c.cfg.ServerTimeout {
+				return fmt.Errorf("server silent for %s", silent.Round(time.Second))
+			}
+		}
+	}
+}
+
 // send is the stream's only writer: gRPC allows one goroutine at a time to send on a stream.
-func (c *Client) send(ctx context.Context, stream linkv1.LinkService_ConnectClient, lastRecv *atomic.Int64) error {
+func (c *Client) send(ctx context.Context, stream linkv1.LinkService_ConnectClient) error {
 	ticker := time.NewTicker(c.cfg.HeartbeatInterval)
 	defer ticker.Stop()
 	heartbeat := &linkv1.ConnectRequest{Msg: &linkv1.ConnectRequest_Heartbeat{Heartbeat: &linkv1.Heartbeat{}}}
@@ -569,9 +593,6 @@ func (c *Client) send(ctx context.Context, stream linkv1.LinkService_ConnectClie
 				return fmt.Errorf("send: %w", err)
 			}
 		case <-ticker.C:
-			if silent := time.Since(time.Unix(0, lastRecv.Load())); silent > c.cfg.ServerTimeout {
-				return fmt.Errorf("server silent for %s", silent.Round(time.Second))
-			}
 			if err := stream.Send(heartbeat); err != nil {
 				return fmt.Errorf("send heartbeat: %w", err)
 			}
@@ -615,6 +636,7 @@ type fakeServer struct {
 	linkv1.UnimplementedLinkServiceServer
 	commands  chan *linkv1.RunCommand
 	dropFirst bool // ends the first stream right after the welcome
+	silent    bool // answers nothing after the first welcome, but keeps the stream open
 
 	mu       sync.Mutex
 	hellos   []*linkv1.Hello
@@ -666,6 +688,9 @@ func (s *fakeServer) Connect(stream linkv1.LinkService_ConnectServer) error {
 		case cmd := <-s.commands:
 			reply = &linkv1.ConnectResponse{Msg: &linkv1.ConnectResponse_RunCommand{RunCommand: cmd}}
 		case <-heartbeats:
+			if s.silent && n == 1 {
+				continue
+			}
 			reply = &linkv1.ConnectResponse{Msg: &linkv1.ConnectResponse_Heartbeat{Heartbeat: &linkv1.Heartbeat{}}}
 		case err := <-recvErr:
 			return err
@@ -764,6 +789,15 @@ func TestClientRun(t *testing.T) {
 		assert.Never(t, func() bool { return srv.helloCount() > 1 }, 600*time.Millisecond, 50*time.Millisecond)
 	})
 
+	t.Run("ends a session the server stops answering and reconnects", func(t *testing.T) {
+		srv := &fakeServer{commands: make(chan *linkv1.RunCommand), silent: true}
+		c, _ := start(t, srv, "good", time.Minute)
+
+		run(t, c)
+
+		require.Eventually(t, func() bool { return srv.helloCount() == 2 }, 3*time.Second, 10*time.Millisecond)
+	})
+
 	t.Run("passes the server's commands on and sends the results back", func(t *testing.T) {
 		srv := &fakeServer{commands: make(chan *linkv1.RunCommand)}
 		c, _ := start(t, srv, "good", time.Minute)
@@ -795,6 +829,18 @@ func TestClientRun(t *testing.T) {
 		wait := run(t, c)
 
 		require.ErrorIs(t, wait(), link.ErrServerGone)
+	})
+
+	t.Run("gives up at OrphanAfter, not a backoff later", func(t *testing.T) {
+		srv := &fakeServer{commands: make(chan *linkv1.RunCommand)}
+		c, lis := start(t, srv, "good", 2500*time.Millisecond) // past the 1s and 2s backoff ceilings
+		require.NoError(t, lis.Close())
+
+		began := time.Now()
+		wait := run(t, c)
+
+		require.ErrorIs(t, wait(), link.ErrServerGone)
+		assert.Less(t, time.Since(began), 3*time.Second)
 	})
 }
 ```

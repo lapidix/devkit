@@ -46,8 +46,25 @@ conn, err := link.Dial(cfg.ServerAddr, creds)
 
 ```go
 // internal/infrastructure/link/link.go
+// watch ends the session when the server has been silent for ServerTimeout. It runs apart from send,
+// so a Send blocked on a peer that stopped reading does not stop the check.
+func (c *Client) watch(ctx context.Context, lastRecv *atomic.Int64) error {
+	ticker := time.NewTicker(c.cfg.HeartbeatInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+			if silent := time.Since(time.Unix(0, lastRecv.Load())); silent > c.cfg.ServerTimeout {
+				return fmt.Errorf("server silent for %s", silent.Round(time.Second))
+			}
+		}
+	}
+}
+
 // send is the stream's only writer: gRPC allows one goroutine at a time to send on a stream.
-func (c *Client) send(ctx context.Context, stream linkv1.LinkService_ConnectClient, lastRecv *atomic.Int64) error {
+func (c *Client) send(ctx context.Context, stream linkv1.LinkService_ConnectClient) error {
 	ticker := time.NewTicker(c.cfg.HeartbeatInterval)
 	defer ticker.Stop()
 	heartbeat := &linkv1.ConnectRequest{Msg: &linkv1.ConnectRequest_Heartbeat{Heartbeat: &linkv1.Heartbeat{}}}
@@ -62,9 +79,6 @@ func (c *Client) send(ctx context.Context, stream linkv1.LinkService_ConnectClie
 				return fmt.Errorf("send: %w", err)
 			}
 		case <-ticker.C:
-			if silent := time.Since(time.Unix(0, lastRecv.Load())); silent > c.cfg.ServerTimeout {
-				return fmt.Errorf("server silent for %s", silent.Round(time.Second))
-			}
 			if err := stream.Send(heartbeat); err != nil {
 				return fmt.Errorf("send heartbeat: %w", err)
 			}
@@ -74,6 +88,7 @@ func (c *Client) send(ctx context.Context, stream linkv1.LinkService_ConnectClie
 ```
 
 - **A stream has no deadline; heartbeats keep it honest.** The daemon sends one every `HEARTBEAT_INTERVAL` and the server answers each; a side that hears nothing for `SERVER_TIMEOUT` ends the session. A deadline on the stream would end healthy sessions, and without heartbeats a half-open connection looks alive until the next send fails, which on a quiet stream may be never.
+- **Silence is checked in its own goroutine**, not in the writer's loop. A `Send` blocks when the peer stops reading and the flow-control window fills, and a check behind it would wait as long.
 - **Application heartbeats, not gRPC keepalive alone.** A client keepalive more frequent than the server's enforcement policy allows (5 minutes by default) makes the server close the connection with `ENHANCE_YOUR_CALM`; when a project sets keepalive, it sets the server's `keepalive.EnforcementPolicy` in the same change.
 - **One reader and one writer per stream.** gRPC lets one goroutine at a time call `Send` and one call `Recv`. The connection owns both goroutines; everyone else sends through a method that hands the message to the writer and returns its result:
 
@@ -96,7 +111,20 @@ func (c *Client) Send(ctx context.Context, msg *linkv1.ConnectRequest) error {
 }
 ```
 
-- **The session's two goroutines run under one `errgroup`**, so the first to fail cancels the stream and the other returns too.
+- **The session's goroutines run under one `errgroup`, and the first to fail ends the stream.** The stream is opened under the session's context, not the group's, so cancelling the group's context wakes neither a reader blocked in `Recv` nor a writer blocked in `Send`, and `Wait` never returns. `context.AfterFunc` cancels the stream when the group's context ends:
+
+```go
+// internal/infrastructure/link/link.go
+g, gctx := errgroup.WithContext(ctx)
+// The stream was opened under ctx, so cancelling gctx alone would wake neither a blocked Recv nor a
+// blocked Send: when one goroutine fails, end the stream itself.
+stop := context.AfterFunc(gctx, cancel)
+defer stop()
+g.Go(func() error { return c.receive(gctx, stream, &lastRecv) })
+g.Go(func() error { return c.send(gctx, stream) })
+g.Go(func() error { return c.watch(gctx, &lastRecv) })
+return true, g.Wait()
+```
 
 ## Reconnecting
 
@@ -117,10 +145,12 @@ func (c *Client) Run(ctx context.Context) error {
 			lastUp = time.Now()
 			wait = minBackoff
 		}
-		if time.Since(lastUp) > c.cfg.OrphanAfter {
+		left := c.cfg.OrphanAfter - time.Since(lastUp)
+		if left <= 0 {
 			return fmt.Errorf("%w: %w", ErrServerGone, err)
 		}
-		delay := rand.N(wait) //nolint:gosec // jitter spreads reconnects; it guards nothing
+		// The last wait ends at the orphan deadline, so the daemon gives up on time, not a backoff later.
+		delay := min(rand.N(wait), left) //nolint:gosec // jitter spreads reconnects; it guards nothing
 		c.lg.WarnContext(ctx, "link down", slog.Any("err", err), slog.Duration("retryIn", delay))
 		wait = min(wait*2, maxBackoff)
 		select {
@@ -134,4 +164,4 @@ func (c *Client) Run(ctx context.Context) error {
 
 - **Exponential backoff with full jitter**: the ceiling doubles from one second to a cap, and each wait is a random duration below it. When a server restarts, its daemons then come back spread out instead of all at once.
 - **A session that registered resets the backoff**; one that never registered does not, so a server that accepts connections and fails every registration is not hammered.
-- **Giving up** is `ErrServerGone` after `ORPHAN_AFTER` without a registered session, for a daemon that exists to serve its server (`rules/go-daemon/lifecycle.md`).
+- **Giving up** is `ErrServerGone` after `ORPHAN_AFTER` without a registered session, for a daemon that exists to serve its server (`rules/go-daemon/lifecycle.md`). The last wait is cut at that deadline: with the 30-second cap, an uncut wait could keep a 30-second orphan timeout going for about a minute.

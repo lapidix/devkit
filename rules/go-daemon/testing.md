@@ -82,7 +82,7 @@ func start(t *testing.T, srv *fakeServer, token string, orphanAfter time.Duratio
 - **`passthrough:///` is required with `grpc.NewClient`**: its default resolver is DNS, which would try to resolve `bufnet`.
 - **`insecure.NewCredentials()` belongs here and nowhere else** (`rules/go-daemon/outbound.md`).
 - **Closing the listener** is how a test makes the server unreachable.
-- What to cover: registering with the token and resuming with the key after a dropped stream, the session staying up while heartbeats are answered, messages passing both ways, a refusal ending `Run` with its sentinel, and `Run` giving up after `ORPHAN_AFTER`.
+- What to cover: registering with the token and resuming with the key after a dropped stream, the session staying up while heartbeats are answered, a session ending and reconnecting when the server keeps the stream open but stops answering, messages passing both ways, a refusal ending `Run` with its sentinel, and `Run` giving up after `ORPHAN_AFTER`.
 - **Intervals in tests are milliseconds**, chosen in the test's config, and checks poll with `require.Eventually`; what must not happen is checked with `assert.Never` over a few intervals.
 
 ## Time

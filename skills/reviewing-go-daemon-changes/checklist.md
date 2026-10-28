@@ -30,8 +30,9 @@ Apply the sections whose rule files cover the file under review. Each item names
 - The first message identifies the daemon with its id, protocol major and build version; a one-time credential is replaced by a resume key after the first registration; the answer to it has a deadline.
 - A refusal (`Unauthenticated`, `PermissionDenied`) ends `Run` with its sentinel instead of a retry.
 - The stream has one reader and one writer goroutine under one errgroup; everyone else sends through `Send(ctx, msg)`.
-- Heartbeats go both ways, and silence longer than the server timeout ends the session; gRPC keepalive, if set, comes with the server's enforcement policy.
-- Reconnects back off exponentially with full jitter, reset after a registered session, and give up after `ORPHAN_AFTER` when the daemon exists only for its server.
+- Heartbeats go both ways, and silence longer than the server timeout ends the session, checked in its own goroutine rather than behind the writer's `Send`; gRPC keepalive, if set, comes with the server's enforcement policy.
+- When one of the session's goroutines fails, the stream itself is cancelled (`context.AfterFunc` on the group's context), so a reader blocked in `Recv` or a writer blocked in `Send` returns.
+- Reconnects back off exponentially with full jitter, reset after a registered session, and give up after `ORPHAN_AFTER` when the daemon exists only for its server, with the last wait cut at that deadline.
 
 ## Child processes (`go-daemon/subprocess.md`)
 
