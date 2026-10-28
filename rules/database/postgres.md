@@ -8,14 +8,14 @@ paths:
 
 # PostgreSQL
 
-The engine-independent rules are in `rules/database/conventions.md`; the tool's syntax is in its file (`rules/database/prisma.md`, `rules/database/sqlc.md`).
+The engine-independent rules are in `rules/database/conventions.md`; the tool's syntax is in its file (`rules/database/prisma.md`, `rules/database/drizzle.md`, `rules/database/sqlc.md`).
 
 ## Names
 
 - Tables and columns are snake_case. Code stays camelCase; the ORM or the generated code maps between them.
 - Tables are plural: `users`, `orders`. `user`, `order` and `group` are reserved words, so singular names would need quoting in every query.
 - Plurals follow English (`categories`, `people`); uncountable nouns stay as they are (`news`). A join table is `{singular}_{plural}`: `user_roles`.
-- Index and constraint names have the shape Prisma generates by default: `users_nickname_key`, `users_status_created_at_idx`, `order_items_order_id_fkey`. Hand-written SQL, and every migration when there is no ORM, names them the same way.
+- Index and constraint names have the shape Prisma generates by default: `users_nickname_key`, `users_status_created_at_idx`, `order_items_order_id_fkey`. Hand-written SQL, Drizzle tables (whose own defaults differ) and every migration when there is no ORM name them the same way.
 
 ## Types
 
@@ -49,4 +49,4 @@ PostgreSQL runs one server process per connection, so connections are capped (`m
 
 - The application's pool size comes from the environment (`DATABASE_POOL_SIZE`, `rules/server/runtime.md`, `rules/go-server/runtime.md`). Instances × pool size stays below `max_connections`, leaving room for migrations and admin tools.
 - Behind a connection pooler (PgBouncer, Supabase's pooler, RDS Proxy), the application connects through `DATABASE_URL`, the pooler, and migrations through `DIRECT_URL`, the database itself. A migration holds one connection and its locks for its whole run, and a pooler would hand that connection to another client mid-way.
-- A pooler in transaction mode gives each transaction whichever server connection is free, so a statement prepared on one connection is missing on the next. The driver must not keep named prepared statements; how depends on the tool (`rules/database/prisma.md`, `rules/database/sqlc.md`).
+- A pooler in transaction mode gives each transaction whichever server connection is free, so a statement prepared on one connection is missing on the next. The driver must not keep named prepared statements; how depends on the tool (`rules/database/prisma.md`, `rules/database/drizzle.md`, `rules/database/sqlc.md`).

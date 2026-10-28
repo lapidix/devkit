@@ -20,7 +20,7 @@ Rules are copied into the project's `.claude/rules/`, not linked: Claude Code lo
    | `go.mod` with an HTTP server (huma, `net/http` listening) | Go server |
    | `go.mod` with no inbound port: a `main` that runs jobs and dials out (gRPC clients, `os/exec`, tickers) | Go daemon |
    | `pnpm-workspace.yaml` | pnpm monorepo |
-   | `schema.prisma` (its `provider` names the engine), `sqlc.yaml` (its `engine`), `mongoose` or `go.mongodb.org/mongo-driver` in the dependencies | the database tool and engine: Prisma, sqlc, Mongoose or the MongoDB driver |
+   | `schema.prisma` (its `provider` names the engine), `drizzle.config.ts` (its `dialect`), `sqlc.yaml` (its `engine`), `mongoose` or `go.mongodb.org/mongo-driver` in the dependencies | the database tool and engine: Prisma, Drizzle, sqlc, Mongoose or the MongoDB driver |
 
    Done when every app has a folder and a stack, and every server a database engine and tool (or "none").
 
@@ -34,7 +34,8 @@ Rules are copied into the project's `.claude/rules/`, not linked: Claude Code lo
    | NestJS server | `typescript` `server` `api` `database/conventions`, an engine and a tool |
    | Go server | `go` `go-server` `api` `database/conventions`, an engine and a tool |
    | Go daemon | `go` `go-daemon` |
-   | PostgreSQL | `database/postgres`, with `database/prisma` (NestJS) or `database/sqlc` (Go) |
+   | PostgreSQL | `database/postgres`, with `database/prisma` or `database/drizzle` (NestJS) or `database/sqlc` (Go) |
+   | Drizzle on an Expo app's SQLite | `database/drizzle` for that app, beside `frontend-native` |
    | MongoDB | `database/mongodb`, with `database/mongoose` (NestJS) or `database/mongo-go-driver` (Go) |
    | pnpm monorepo (the repo root) | `monorepo` |
 

@@ -8,7 +8,7 @@ paths:
 
 # Database conventions
 
-Rules every database follows, whatever the engine. The engine's own rules are in `rules/database/postgres.md` or `rules/database/mongodb.md`; the data access tool's in its file: `prisma.md` or `mongoose.md` for a NestJS server, `sqlc.md` or `mongo-go-driver.md` for a Go server. The server rules already place the code: repositories and mappers live in the module's `adapters/out/persistence/` (`rules/server/adapters.md`, `rules/go-server/adapters.md`), and transactions open in use cases.
+Rules every database follows, whatever the engine. The engine's own rules are in `rules/database/postgres.md` or `rules/database/mongodb.md`; the data access tool's in its file: `prisma.md`, `drizzle.md` or `mongoose.md` for a NestJS server, `sqlc.md` or `mongo-go-driver.md` for a Go server. The server rules already place the code: repositories and mappers live in the module's `adapters/out/persistence/` (`rules/server/adapters.md`, `rules/go-server/adapters.md`), and transactions open in use cases.
 
 ## Engine and tool
 
@@ -19,7 +19,7 @@ Rules every database follows, whatever the engine. The engine's own rules are in
 
 - The schema lives in the one folder the ORM reads, one file per module: `prisma/schema/{module}.prisma` with Prisma, `src/infrastructure/database/schema/{module}.schema.ts` with Drizzle. A table is defined only in its owning module's file. With sqlc the migrations are the schema (`rules/database/sqlc.md`).
 - MongoDB has no shared schema folder: each module's schema sits beside its repository (`rules/database/mongodb.md`).
-- A generated Prisma client goes to `src/generated/` and is not committed; CI and the image build generate it. sqlc's generated code is committed, as Go builds expect (`rules/database/sqlc.md`).
+- A generated Prisma client goes to `src/generated/` and is not committed; CI and the image build generate it. sqlc's generated code is committed, as Go builds expect (`rules/database/sqlc.md`), and so are Drizzle's migrations with their `meta/` snapshots (`rules/database/drizzle.md`).
 
 ## Ids
 

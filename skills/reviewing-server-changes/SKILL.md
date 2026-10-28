@@ -51,6 +51,9 @@ The rule files named here are in the project's `.claude/rules/{area}/` (`rules/f
    printf '%s\n' "$FILES" | grep -v 'env\.config\.ts$' | xargs grep -nE 'process\.env' /dev/null   # environment read outside env.config.ts (runtime.md)
    printf '%s\n' "$FILES" | grep -E '/adapters/in/' | xargs grep -nE "from ['\"][^'\"]*/domain/" /dev/null | grep -v '\.const['"'"'"]'   # inbound adapters import only {d}.const.ts from the domain (architecture.md)
    g "orderBy: *\{ *[A-Za-z]+: *'(asc|desc)' *\}|\.sort\( *\{ *[A-Za-z]+: *-?1 *\} *\)" '/adapters/out/persistence/'   # a list sorted by one key; end the sort with the id (database/conventions.md)
+   g '\b(uuid|text|integer|bigint|boolean|timestamp|date|jsonb|numeric)\(\)' '/infrastructure/database/schema/'   # Drizzle: a column without its database name (database/drizzle.md)
+   g "timestamp\( *'[^']*' *\)" '/infrastructure/database/schema/'           # Drizzle: a moment without withTimezone (database/drizzle.md)
+   g '\.unique\(\)|\.defaultRandom\(\)' '/infrastructure/database/schema/'    # Drizzle: its own constraint name, or an id the database makes (database/drizzle.md)
    printf '%s\n' "$DB_FILES" | grep -E '\.sql$' | xargs grep -niE 'DROP (COLUMN|TABLE)|RENAME|SET NOT NULL|ALTER COLUMN .* TYPE|ADD COLUMN .*NOT NULL' /dev/null   # a destructive change: it must be release 2 of expand → contract, or the new column needs a default (database/conventions.md)
 
    # changed decision code without a test beside it (testing.md)

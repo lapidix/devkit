@@ -19,6 +19,7 @@ What changed for projects that use these rules and skills, newest first. Every c
 - Skills `scaffolding-go-daemons` (with an example daemon that builds, lints and passes its tests), `reviewing-go-daemon-changes`, `auditing-go-daemons` and `upgrading-go-daemons`.
 - `frontend-native` rules for React Native and Expo apps: `app.md` (routes in a root `app/`, the app layer in `src/app/`), `platform.md`, `runtime.md`, `styling.md`, `accessibility.md`, `env.md`, `build.md` and `testing.md`. `installing-rules` copies `typescript` `frontend` `frontend-native` for an Expo app, and `reviewing-frontend-changes` checks them.
 - `frontend/local-data.md`: data kept on the device through local adapters, the database handle, transactions, React Query over local data, migrations and seeds.
+- `database/drizzle.md`: Drizzle with postgres-js for a NestJS server, and its migrations bundled into an Expo app. `installing-rules` copies it beside `database/postgres` for a Drizzle server, and `reviewing-server-changes` checks unnamed columns, moments without a time zone, Drizzle's own constraint names and ids the database makes.
 
 ## 2026-10-26
 

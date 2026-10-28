@@ -49,7 +49,7 @@ export class UserModule {}
 | Request validation | A global zod validation pipe (`nestjs-zod`) |
 | Standard response | A global interceptor for successes, a global exception filter for every error (`rules/server/http-api.md`) |
 | Authentication | The auth guard registered as `APP_GUARD`; `@Public()` and `@Roles()` decorators in `common/decorators/` |
-| Transactions | `ClsModule` with `@nestjs-cls/transactional` and the adapter for the ORM; repositories query through `TransactionHost.tx`. With Prisma the adapter gets `prismaInjectionToken: PrismaService` and `TransactionHost` the client type (`rules/database/prisma.md`) |
+| Transactions | `ClsModule` with `@nestjs-cls/transactional` and the adapter for the ORM; repositories query through `TransactionHost.tx`. With Prisma the adapter gets `prismaInjectionToken: PrismaService` and `TransactionHost` the client type (`rules/database/prisma.md`); with Drizzle, `drizzleInstanceToken` and the `Database` type (`rules/database/drizzle.md`) |
 | Logs and `requestId` | `nestjs-pino`, generating the id or taking `X-Request-Id` |
 | Rate limits | `@nestjs/throttler`, applied to the routes that need it |
 | Security headers, CORS, body size | `helmet`, `app.enableCors({ origin: ENV.CORS_ORIGINS })`, an explicit body parser limit |
