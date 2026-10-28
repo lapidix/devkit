@@ -1,11 +1,11 @@
 # lapidix devkit
 
-Rules and skills for Claude Code and Codex, for building web apps on one architecture: a layered React or Next.js frontend, NestJS or Go servers built domain first around ports and adapters, and one HTTP contract between them.
+Rules and skills for Claude Code and Codex, for building web apps on one architecture: a layered React or Next.js frontend, NestJS or Go servers built domain first around ports and adapters, and one HTTP contract between them. Go daemons — long-running programs with no inbound port that dial out to their server — get rules and skills of their own.
 
 - **Rules** are the conventions. Each has `paths:` frontmatter, so Claude Code loads it only while it works on matching files, and Codex reads an index of them in `AGENTS.md`: folder structure, naming, errors, transactions, tests.
-- **Skills** are the procedures: install the rules, scaffold a frontend entity or a server module, review a change against the rules, set up architecture checks, write a pull request.
+- **Skills** are the procedures: install the rules, scaffold a frontend entity, a server module or a daemon, review a change against the rules, audit and upgrade a daemon, set up architecture checks, write a pull request.
 
-The examples are run, not just written: the frontend slice and the NestJS and Go example modules compile and pass their tests (database tests against PostgreSQL included), and the review and architecture checks were tried against planted violations.
+The examples are run, not just written: the frontend slice, the NestJS and Go example modules and the example daemon compile and pass their tests (database tests against PostgreSQL included), and the review and architecture checks were tried against planted violations.
 
 ## Install
 
@@ -45,6 +45,7 @@ bash ~/devkit/scripts/copy-rules.sh ~/work/app typescript frontend api
 | React or Next.js frontend | `typescript` `frontend`, and `api` in a frontend-only project whose backend follows the contract |
 | NestJS server | `typescript` `server` `api` `database/conventions`, an engine and a tool |
 | Go server | `go` `go-server` `api` `database/conventions`, an engine and a tool |
+| Go daemon | `go` `go-daemon` |
 | pnpm monorepo | add `monorepo` |
 
 For the database, PostgreSQL is `database/postgres` with `database/prisma` (NestJS) or `database/sqlc` (Go); MongoDB is `database/mongodb` with `database/mongoose` (NestJS) or `database/mongo-go-driver` (Go).
@@ -70,6 +71,7 @@ This links `~/.claude/rules/git` to the clone, so a `git pull` updates it (`CLAU
 - **Frontend**: React with React Compiler, TanStack Query v5, react-hook-form and zod, Tailwind, Vitest; a SPA or Next.js. Layers `app → pages → widgets → features → entities → shared`, with the domain model in `entities`. HTTP goes through [arthron](https://lapidix.github.io/arthron/) 2.1 or later.
 - **NestJS**: modules split into `domain`, `application` and `adapters/{in,out}`; zod DTOs with nestjs-zod; Prisma 7 or Mongoose; transactions through nestjs-cls; external APIs through arthron 2.1 or later; pino; Vitest with SWC.
 - **Go**: the same module split under `internal/`; net/http with huma; sqlc, pgx and goose, or the MongoDB driver; caarlos0/env; slog; testify; golangci-lint.
+- **Go daemons**: one `Run(ctx)` per job under an errgroup in `internal/app`; gRPC with `grpc.NewClient`, TLS and heartbeats; a protobuf contract generated with buf from `tools/go.mod`; caarlos0/env; slog on stderr; goleak and bufconn in tests; static binaries released with checksums.
 - **Both servers** follow one HTTP contract (`rules/api/contract.md`): every response carries `result`, `message`, `timestamp`, `requestId` and `errorCode`; a create answers 201 with `{ id }`; a domain error's kind decides the status.
 - **Databases**: UUIDv7 ids created by the application, expand → contract migrations, indexes that follow real queries.
 - **Monorepos**: pnpm workspaces, turbo, Biome, dependency-cruiser.
@@ -126,6 +128,14 @@ This links `~/.claude/rules/git` to the clone, so a `git pull` updates it (`CLAU
 | `go-server/http.md` | huma setup (`$schema` and `/schemas` off), `apiresponse`, the error mapping override, middleware order, auth, 404/405, server timeouts |
 | `go-server/runtime.md` | caarlos0/env config (the service's `*time.Location` included), slog with a handler that adds requestId and userId, health and metrics, `main` |
 | `go-server/testing.md` | testify, `t.Run` names that state the behavior, hand-written fakes, testkits, `dbtest`, `-race -shuffle`, the architecture test |
+| `go-daemon/architecture.md` | What a daemon is, its layout (`internal/app`, one package per job, connections in `internal/infrastructure`), dependency direction, how a command flows, a one-shot command |
+| `go-daemon/runtime.md` | caarlos0/env config with every interval checked and secrets `unset`, slog on stderr with the work item's id, no health endpoint, the version, `main` and exit codes |
+| `go-daemon/lifecycle.md` | One `Run(ctx)` per component, periodic jobs, bounded work refused when busy, per-item recovery, shutdown order, giving up when the server is gone |
+| `go-daemon/outbound.md` | `grpc.NewClient` with TLS, registering with a one-time token and a resume key, one reader and one writer per stream, heartbeats, backoff with jitter |
+| `go-daemon/subprocess.md` | `exec.CommandContext` with a deadline, process groups, `Cancel` and `WaitDelay`, an explicit environment, capped output, the result table |
+| `go-daemon/testing.md` | goleak, a fake server over bufconn, ticks through a channel, real child processes, what to test |
+| `go-daemon/contract.md` | One owner for the protobuf contract, buf from `tools/go.mod`, committed generated code, `buf breaking` with `FILE`, major versions in the package and the handshake |
+| `go-daemon/release.md` | Semver tags tied to the contract, the Makefile with `release`, static binaries with checksums, `ADD --checksum` in the consumer's image, the compatibility window |
 
 ## Skills
 
@@ -140,6 +150,10 @@ This links `~/.claude/rules/git` to the clone, so a `git pull` updates it (`CLAU
 | `reviewing-server-changes` | Review NestJS changes against the rules before a PR |
 | `scaffolding-go-modules` | Add a domain module to a Go server, with an example module that builds, lints and passes its tests and the architecture test |
 | `reviewing-go-changes` | Review Go changes against the rules before a PR |
+| `scaffolding-go-daemons` | Create a Go daemon, or add a job or a connection to one, with an example daemon that builds, lints and passes its tests |
+| `reviewing-go-daemon-changes` | Review Go daemon changes against the rules before a PR |
+| `auditing-go-daemons` | Check a whole daemon against the rules and order the fixes |
+| `upgrading-go-daemons` | Upgrade a daemon's Go version, tools or dependencies, change its contract, and cut a release |
 | `setting-up-architecture-checks` | Install or repair architecture checks: dependency-cruiser (`check:arch`) for TypeScript apps and monorepos, `internal/archtest` for Go |
 | `writing-pull-requests` | Open a pull request, or write its title and body |
 

@@ -18,11 +18,15 @@ Rules are the conventions; skills are the procedures. A rule the project install
 | Review NestJS changes before a PR | `reviewing-server-changes` |
 | Add a domain module to a Go server | `scaffolding-go-modules` |
 | Review Go changes before a PR | `reviewing-go-changes` |
+| Create a Go daemon, or add a job or a connection to one | `scaffolding-go-daemons` |
+| Review Go daemon changes before a PR | `reviewing-go-daemon-changes` |
+| Check a whole Go daemon against the rules | `auditing-go-daemons` |
+| Upgrade a Go daemon's Go, tools or dependencies, change its contract, cut a release | `upgrading-go-daemons` |
 | Install or repair architecture checks | `setting-up-architecture-checks` |
 | Copy the rules into a project, or update them | `installing-rules` |
 | Open a pull request | `writing-pull-requests` |
 
-A change inside an existing slice or module needs no skill: read the rules for its topics below.
+A change inside an existing slice, module or daemon job needs no skill: read the rules for its topics below.
 
 ## Topics and rules
 
@@ -54,6 +58,19 @@ A change inside an existing slice or module needs no skill: read the rules for i
 | Tests | `server/testing.md` | `go-server/testing.md` |
 | Framework wiring | `server/nestjs.md` | |
 | Language conventions | `typescript/conventions.md` | `go/conventions.md`, `go/concurrency.md`, `go/tooling.md` |
+
+**Go daemons** (long-running, no inbound port, dialing out to their server), with `go/conventions.md`, `go/concurrency.md` and `go/tooling.md`:
+
+| Topic | Rule |
+|---|---|
+| Layout, jobs and connections, dependency direction, a one-shot command | `go-daemon/architecture.md` |
+| Config, logs, version, exit codes, `main` | `go-daemon/runtime.md` |
+| `Run(ctx)`, periodic jobs, work limits, shutdown, giving up | `go-daemon/lifecycle.md` |
+| Dialing, registering, streams, heartbeats, reconnecting | `go-daemon/outbound.md` |
+| Running child processes | `go-daemon/subprocess.md` |
+| Tests | `go-daemon/testing.md` |
+| The protobuf contract with the server | `go-daemon/contract.md` |
+| Versions, release binaries, handing the binary over | `go-daemon/release.md` |
 
 **Databases**:
 
