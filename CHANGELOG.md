@@ -2,6 +2,13 @@
 
 What changed for projects that use these rules and skills, newest first. Every commit on `main` is a release (README, "Install"); this file lists the ones that change what a rule or skill asks of a project.
 
+## 2026-10-28
+
+### Added
+
+- `go-daemon` rules for long-running Go programs with no inbound port: `architecture.md`, `runtime.md`, `lifecycle.md`, `outbound.md`, `subprocess.md`, `testing.md`, `contract.md` and `release.md`. They sit on `go/` beside `go-server/`; `installing-rules` copies `go` `go-daemon` for a Go daemon.
+- Skills `scaffolding-go-daemons` (with an example daemon that builds, lints and passes its tests), `reviewing-go-daemon-changes`, `auditing-go-daemons` and `upgrading-go-daemons`.
+
 ## 2026-10-26
 
 ### Changed

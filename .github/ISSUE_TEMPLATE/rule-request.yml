@@ -10,6 +10,7 @@ body:
         - frontend (React, Next.js)
         - server (NestJS)
         - go-server
+        - go-daemon
         - api contract
         - database
         - monorepo
