@@ -59,4 +59,4 @@ export class UserModule {}
 
 ## Tests
 
-Vitest compiles with esbuild, which drops decorator metadata; add the SWC plugin (`unplugin-swc`) so Nest can resolve constructor injection in tests that build a testing module. Unit tests of use cases construct them directly and need no Nest at all.
+Vitest on Vite 7 or older compiles with esbuild, which drops decorator metadata (Vite 8's Oxc keeps it when the tsconfig turns on `emitDecoratorMetadata`). Add the SWC plugin (`unplugin-swc`), which keeps it on every Vite version, so Nest can resolve constructor injection in tests that build a testing module. Unit tests of use cases construct them directly and need no Nest at all.

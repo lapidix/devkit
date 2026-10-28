@@ -21,7 +21,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 22
+          node-version-file: .node-version
       - name: Install Claude Code
         run: npm install --global @anthropic-ai/claude-code@2.1.309
       - name: Catalog
@@ -35,7 +35,7 @@ jobs:
         run: claude plugin validate ./skills
       - name: Shell scripts
         if: ${{ !cancelled() }}
-        run: shellcheck scripts/*.sh
+        run: shellcheck scripts/*.sh examples/*.sh examples/*/check.sh
       - name: Whitespace
         if: ${{ !cancelled() && github.event_name == 'pull_request' }}
         env:

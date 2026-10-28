@@ -18,8 +18,9 @@ Open an issue with the **Rule or skill request** form. Describe what agents get 
    bash scripts/check-catalog.sh
    claude plugin validate . --strict
    claude plugin validate ./skills
-   shellcheck scripts/*.sh
+   shellcheck scripts/*.sh examples/*.sh examples/*/check.sh
    ```
+   When you change a skill example, or a rule its support files follow, also run that example's `bash examples/{frontend,nestjs,go}/check.sh`. They need the Node version in `.node-version` and Go. The Go database tests run when `TEST_DATABASE_URL` points at a PostgreSQL 17 database you can throw away, and skip without it.
 5. Open the pull request with the title `#<N> <type>: <summary>` and fill in the template. The maintainer reviews it; it merges once DCO and CI pass and the review approves it.
 
 Commit messages follow [`rules/git/commit.md`](rules/git/commit.md), and pull requests follow [`rules/git/pull-request.md`](rules/git/pull-request.md).

@@ -1,0 +1,10 @@
+// rules/database/prisma.md: generator and datasource only
+generator client {
+  provider     = "prisma-client"
+  output       = "../../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}

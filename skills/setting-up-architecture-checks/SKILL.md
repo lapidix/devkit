@@ -56,7 +56,7 @@ A Next.js app's route folder at the app root (`apps/web/app/`) sits outside `src
    - pre-commit: a `pnpm check:arch` line in `.husky/pre-commit`
    - CI: its own step, `- run: pnpm check:arch` with `if: ${{ !cancelled() }}` (`ci.md`)
 
-6. **Verify.** Run `pnpm check:arch`. Fix each violation it reports, or list it in your report. Then prove the rules fire: add each temporary file below, run the check, confirm the named rule fails, and delete the file.
+6. **Verify.** Run `pnpm check:arch`. Its last line counts the modules it cruised; `0 modules` means it read no source and passed without checking anything (Common mistakes, TypeScript 7). Fix each violation it reports, or list it in your report. Then prove the rules fire: add each temporary file below, run the check, confirm the named rule fails, and delete the file.
    - an `entities` file importing a `features` slice → `fsd-layer-direction-entities`
    - a `features` slice importing another one → `fsd-no-sibling-slice-features`
    - a `pages` file importing a file inside a widget instead of its `index.ts` → `fsd-public-api-widgets`
@@ -67,7 +67,7 @@ A Next.js app's route folder at the app root (`apps/web/app/`) sits outside `src
      - a package importing a package outside its `ALLOWED` list (`../../user/src/index`) → `pkg-graph-*`
      - a package importing an app file → `pkg-no-app`
 
-   Done when the check passes on the real code (or every remaining violation is in your report), each temporary file fails with its named rule, and no temporary file is left.
+   Done when the check passes on the real code (or every remaining violation is in your report) with a module count above 0, each temporary file fails with its named rule, and no temporary file is left.
 
 ## Steps (Go server)
 
@@ -75,9 +75,9 @@ dependency-cruiser does not read Go, and golangci-lint's depguard cannot tell a 
 
 1. **Install.** Copy `arch_test.go` to `internal/archtest/arch_test.go` and run `go get golang.org/x/tools`. It assumes the layout of `rules/go-server/architecture.md` (`internal/modules/{d}/…`, `internal/app`); if the project's folders differ, adjust `locate` and say so in your report.
 
-2. **Run.** `go test ./internal/archtest/`. It runs with every `go test ./...` from then on, so CI needs no new step. Fix each violation it reports, or list it in your report.
+2. **Run.** `go test -count=1 ./internal/archtest/`. `-count=1` skips Go's test cache, which does not see the files `packages.Load` reads, so a cached run passes after a violating file is added. It runs with every `go test ./...` from then on, so CI needs no new step. Fix each violation it reports, or list it in your report.
 
-3. **Verify.** Add each temporary file, run the test, confirm the named rule fails, and delete the file:
+3. **Verify.** Add each temporary file, run the test with `-count=1`, confirm the named rule fails, and delete the file:
    - a `domain` file importing `internal/infrastructure/database` → rule 1
    - an `adapters/in/httpapi` file using `domain.ErrUserNotFound` → rule 3
    - another module's `application` file importing `internal/modules/user/adapters/out/persistence` → rule 5
@@ -91,6 +91,7 @@ dependency-cruiser does not read Go, and golangci-lint's depguard cannot tell a 
 | Mistake | Fix |
 |---|---|
 | Two apps both map `@/`, so one app's imports resolve into the other's tree | Give each app its own alias; the root check reads one tsconfig |
+| TypeScript 7 in the project | dependency-cruiser 18.7 reads TypeScript through the project's `typescript` below 7, or through `@swc/core` when that is installed (a NestJS project with `unplugin-swc`). With TypeScript 7 and no `@swc/core` it warns `missing-tsc-transpiler`, cruises `0 modules` and exits 0. Keep TypeScript 6 until a dependency-cruiser release supports 7, and check the module count after every upgrade of either |
 | A rule regex with an optional group around a repetition (`(\.tsx?)?`) | dependency-cruiser rejects it as unsafe; spell out the alternatives instead |
 | Exclude patterns without anchors (`build`) | Anchor to path segments, `(^|/)build(/|$)`; a bare `build` also skips a slice named `pipeline-builder` |
 | A package added without an `ALLOWED` entry, silenced by deleting the check | The throw is the point: without an entry, that package can import anything |

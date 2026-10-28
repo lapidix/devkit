@@ -3,3 +3,5 @@
 .claude/settings.local.json
 .omc/
 .superpowers/
+examples/*/.build/
+node_modules/
