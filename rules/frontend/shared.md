@@ -15,7 +15,7 @@ shared/
 │   ├── http/                     httpClient (arthron), HttpClient, unwrap, ApiError, required, toEntityList
 │   ├── client/query.client.ts    getQueryClient; other library clients sit beside it (socket.client.ts)
 │   ├── i18n/                     TranslationKey, zod.error-map.ts (rules/frontend/i18n.md)
-│   ├── router/                   useSearchParamState
+│   ├── router/                   useSearchParamState, in a web app (rules/frontend-web/routing.md)
 │   ├── store/create-store.ts     createStore, when the project does not use Zustand
 │   ├── error/common.errors.ts    NotFoundError, ValidationError and other shared error classes
 │   └── boundary/AsyncBoundary.tsx
@@ -30,7 +30,7 @@ shared/
 
 | Folder | Holds |
 |---|---|
-| `libs/` | The technical base the whole app relies on: the HTTP client set up for the project's API (`http`, `rules/frontend/entity-data-access.md`), the clients and setup of external libraries (`client`, `i18n`, `router`), and domain-free shared behavior (`store`, `error`, `boundary`) |
+| `libs/` | The technical base the whole app relies on: the HTTP client set up for the project's API (`http`, `rules/frontend/entity-data-access.md`), the clients and setup of external libraries (`client`, `i18n`, `router`), the platform's own modules behind one interface (`rules/frontend-native/runtime.md`), and domain-free shared behavior (`store`, `error`, `boundary`) |
 | `utils/` | Pure functions with no state or setup: formatters, `cn` |
 | `ui/` | Things drawn on screen. Same folder layout as entity and feature `ui/`: flat, grouped by the project's kind list past roughly ten files |
 
@@ -57,27 +57,8 @@ export function getQueryClient() {
 }
 ```
 
-- The server builds a new client per request, so users never share a cache.
-- The browser keeps one. A client created with `useState` in the provider can be discarded when a component suspends during the first render, and every query restarts.
-- In Next.js, where pages prefetch on the server without awaiting, the client also hands over queries that are still pending, so their results stream to the browser:
-  ```ts
-  defaultOptions: {
-    dehydrate: {
-      shouldDehydrateQuery: (query) => defaultShouldDehydrateQuery(query) || query.state.status === 'pending',
-    },
-  },
-  ```
-  Give queries a `staleTime` above zero there too; with `0`, the browser refetches everything right after hydration.
-
-## libs/router
-
-URL state (a page's tab, list filters, sort, page number) goes through one hook:
-
-```ts
-const [tab, setTab] = useSearchParamState('tab', { defaultValue: 'overview' });
-```
-
-It owns the rules every URL state shares: the default value is not written to the URL, changing state replaces the history entry instead of pushing one, and numbers are parsed.
+- The app keeps one client. A client created with `useState` in the provider can be discarded when a component suspends during the first render, and every query restarts.
+- The `typeof window` branch is for server rendering, where the server builds a new client per request (`rules/frontend-web/nextjs.md`).
 
 ## libs/error and libs/boundary
 
@@ -117,4 +98,4 @@ export const ENV = {
 } as const;
 ```
 
-No other file reads `import.meta.env` or `process.env`. Variable prefixes follow the framework (`rules/monorepo/env.md`).
+No other file reads `import.meta.env` or `process.env`. Variable prefixes follow the framework (`rules/monorepo/env.md`); an Expo app's file is in `rules/frontend-native/env.md`.

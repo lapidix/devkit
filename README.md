@@ -1,6 +1,6 @@
 # lapidix devkit
 
-Rules and skills for Claude Code and Codex, for building web apps on one architecture: a layered React or Next.js frontend, NestJS or Go servers built domain first around ports and adapters, and one HTTP contract between them. Go daemons — long-running programs with no inbound port that dial out to their server — get rules and skills of their own.
+Rules and skills for Claude Code and Codex, for building apps on one architecture: a layered React frontend (a SPA, Next.js or an Expo app), NestJS or Go servers built domain first around ports and adapters, and one HTTP contract between them. Go daemons — long-running programs with no inbound port that dial out to their server — get rules and skills of their own.
 
 - **Rules** are the conventions. Each has `paths:` frontmatter, so Claude Code loads it only while it works on matching files, and Codex reads an index of them in `AGENTS.md`: folder structure, naming, errors, transactions, tests.
 - **Skills** are the procedures: install the rules, scaffold a frontend entity, a server module or a daemon, review a change against the rules, audit and upgrade a daemon, set up architecture checks, write a pull request.
@@ -37,12 +37,13 @@ With the plugin installed, ask the agent to install the rules. The `installing-r
 
 ```bash
 git clone https://github.com/lapidix/devkit ~/devkit
-bash ~/devkit/scripts/copy-rules.sh ~/work/app typescript frontend api
+bash ~/devkit/scripts/copy-rules.sh ~/work/app typescript frontend frontend-web api
 ```
 
 | Project | Copy |
 |---|---|
-| React or Next.js frontend | `typescript` `frontend`, and `api` in a frontend-only project whose backend follows the contract |
+| React or Next.js frontend | `typescript` `frontend` `frontend-web`, and `api` in a frontend-only project whose backend follows the contract |
+| React Native or Expo app | `typescript` `frontend` `frontend-native`, and `api` in the same case |
 | NestJS server | `typescript` `server` `api` `database/conventions`, an engine and a tool |
 | Go server | `go` `go-server` `api` `database/conventions`, an engine and a tool |
 | Go daemon | `go` `go-daemon` |
@@ -50,6 +51,7 @@ bash ~/devkit/scripts/copy-rules.sh ~/work/app typescript frontend api
 
 For the database, PostgreSQL is `database/postgres` with `database/prisma` (NestJS) or `database/sqlc` (Go); MongoDB is `database/mongodb` with `database/mongoose` (NestJS) or `database/mongo-go-driver` (Go).
 
+- `frontend` holds what any React app follows; `frontend-web` and `frontend-native` add what needs a browser or a device. A project copied before the split adds `frontend-web` on its next update, or the rules moved there stop loading.
 - `copy-rules.sh` takes areas (`frontend`) or single files (`database/postgres`), and lists the areas the copied rules cite that the project lacks, with the files that cite them; copy the ones that apply.
 - Run it again after this repo changes (a `git pull`, or a plugin update): new files are added, unchanged ones skipped, and files that differ are shown as a diff and left alone (exit code 2) until you pass `--update`, which overwrites them along with any edits made in the project.
 - In a monorepo, pass `--prefix <app folder>` for each app a set of areas is for (`--prefix apps/web . frontend`); every `**/` glob goes under that folder, so one app's rules do not load while you work on another. Root areas (`monorepo`, `git`) take no prefix. Rerun with the same flags, and files you have not edited compare as unchanged.
@@ -68,7 +70,9 @@ This links `~/.claude/rules/git` to the clone, so a `git pull` updates it (`CLAU
 
 ## What the rules assume
 
-- **Frontend**: React with React Compiler, TanStack Query v5, react-hook-form and zod, Tailwind, Vitest; a SPA or Next.js. Layers `app → pages → widgets → features → entities → shared`, with the domain model in `entities`. HTTP goes through [arthron](https://lapidix.github.io/arthron/) 2.1 or later.
+- **Frontend**: React with React Compiler, TanStack Query v5, react-hook-form and zod, Vitest. Layers `app → pages → widgets → features → entities → shared`, with the domain model in `entities`. HTTP goes through [arthron](https://lapidix.github.io/arthron/) 2.1 or later; data kept on the device goes through local adapters beside it.
+- **Web**: a SPA or Next.js, with Tailwind when the project styles with it.
+- **Native**: Expo SDK 57 with expo-router (routes in a root `app/`), React Native 0.71 or later, react-native-gesture-handler 2; React Native for Web 0.21 when the app also builds for web.
 - **NestJS**: modules split into `domain`, `application` and `adapters/{in,out}`; zod DTOs with nestjs-zod; Prisma 7 or Mongoose; transactions through nestjs-cls; external APIs through arthron 2.1 or later; pino; Vitest with SWC.
 - **Go**: the same module split under `internal/`; net/http with huma; sqlc, pgx and goose, or the MongoDB driver; caarlos0/env; slog; testify; golangci-lint.
 - **Go daemons**: one `Run(ctx)` per job under an errgroup in `internal/app`; gRPC with `grpc.NewClient`, TLS and heartbeats; a protobuf contract generated with buf from `tools/go.mod`; caarlos0/env; slog on stderr; goleak and bufconn in tests; static binaries released with checksums.
@@ -89,19 +93,34 @@ This links `~/.claude/rules/git` to the clone, so a `git pull` updates it (`CLAU
 | `monorepo/tooling.md` | turbo, Biome, dependency-cruiser, git hooks, knip |
 | `monorepo/ci.md` | PR checks, skipping docs-only changes, script injection, actions pinned by SHA |
 | `frontend/entities.md` | The entities slice: entities, value objects, reference types, `@x`, ui, index.ts |
+| `frontend/local-data.md` | Data kept on the device: local adapters beside the API's, the database handle, transactions, React Query over local data, migrations and seeds |
 | `frontend/entity-data-access.md` | Adapters, URL templates, the HTTP client (arthron, `unwrap`, `apiErrors`) and what it guarantees, DTOs, mappers, time values |
 | `frontend/features.md` | The features slice: use cases, service, query and mutation options, hooks, UI boundaries, index.ts |
 | `frontend/react-query.md` | Query keys, queryOptions, mutationOptions, the three layers that react to success and failure |
 | `frontend/widgets.md` | The data a widget owns, `{kind}/{name}` layout, no hooks of its own, props, index.ts |
-| `frontend/pages.md` | Domain folders, route params, prefetching with AsyncBoundary, URL state, names |
-| `frontend/app.md` | SPA and Next.js layout, providers, URL-based routes, layouts |
+| `frontend/pages.md` | Domain folders, route params, prefetching with AsyncBoundary, where screen state lives, names |
+| `frontend/app.md` | What the app layer holds, providers, layouts |
 | `frontend/shared.md` | Domain-free shared code, libs (http, client, i18n, router, store, error, boundary), shared errors, env |
-| `frontend/react.md` | Component declarations, props, rendering, React Compiler, effects, Next.js `'use client'` |
+| `frontend/react.md` | Component declarations, props, rendering, React Compiler, effects |
 | `frontend/state.md` | One store tool per project, where domain and shared stores live |
 | `frontend/forms-rhf-zod.md` | react-hook-form with zod: form hooks, when to validate, submit buttons, edit forms, server errors on fields |
 | `frontend/testing.md` | Vitest, where tests live and how they are named, what to test, fakes, coverage |
 | `frontend/i18n.md` | One engine with typed keys, key format, pairing checks, translation rules, keys passed as data |
-| `frontend/styling.md` | Tokens, date and number formatters, Tailwind `cn()` |
+| `frontend/styling.md` | Tokens, date and number formatters |
+| `frontend-web/app.md` | SPA and Next.js layout, where the providers are stacked, URL-based routes |
+| `frontend-web/routing.md` | What goes in the URL, `useSearchParamState` |
+| `frontend-web/nextjs.md` | `'use client'` and slots, a server-rendered page with `HydrationBoundary`, the query client per request and dehydration |
+| `frontend-web/styling.md` | Tailwind `cn()` |
+| `frontend-web/accessibility.md` | Semantic elements, labels, `<button type>` |
+| `frontend-web/testing.md` | jsdom, Testing Library, `userEvent` |
+| `frontend-native/app.md` | Routes in a root `app/` and the app layer in `src/app/`, route params, screen state, the root layout's providers, handing platform modules to packages |
+| `frontend-native/platform.md` | Platform files instead of `Platform.OS`, one interface per platform capability, React Native for Web's `hitSlop`, `flex: 0` and press events |
+| `frontend-native/runtime.md` | Web APIs React Native lacks and what to use instead, the globals Expo installs, native modules and rebuilds |
+| `frontend-native/styling.md` | `StyleSheet`, the theme hook, tokens, a themed text component, checking light and dark |
+| `frontend-native/accessibility.md` | `role` and `aria-*` props, toggle state, touch target sizes |
+| `frontend-native/env.md` | `EXPO_PUBLIC_*` read by full name, values inlined at build time, env file order, checking a value in the bundle |
+| `frontend-native/build.md` | Generated native projects and config plugins, `expo install --check`, checking the bundle after a Metro or Babel change |
+| `frontend-native/testing.md` | Tests without React Native, adapters against SQLite in Node, rendering as the project's decision, what only a device shows |
 | `api/contract.md` | The HTTP contract for any server language: standard response, 201 with `{ id }`, lists, pageSize and cursors, the error table (kind → status, `fields: {path, message}`), unknown fields ignored, `/api` paths, auth defaults and baseline defenses, API docs |
 | `server/architecture.md` | Hexagonal layout (domain first, adapters in and out), technical clients and adapters, dependency direction, the U-shaped request flow, calls between modules |
 | `server/domain.md` | Class aggregates (register, fromSnapshot, toSnapshot, now as an argument), value objects, repository ports, DomainError (kind, code) |

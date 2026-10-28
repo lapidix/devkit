@@ -12,7 +12,7 @@ paths:
 
 ## Tools, files and names
 
-- Vitest. Component tests add jsdom and Testing Library.
+- Vitest. How components are rendered in tests depends on the platform: `rules/frontend-web/testing.md`, `rules/frontend-native/testing.md`.
 - A test sits beside its source: `user.adapter.ts` and `user.adapter.test.ts`. No `__tests__/` folders.
 - Test names are English sentences that state the behavior that must hold, not the implementation: `it('converts the creation time to milliseconds')`, not `it('calls toEntity')`.
 
@@ -39,7 +39,7 @@ When you create or change code in a "Yes" row, create or update its tests in the
 - A hook reaches module-level instances (`UserMutations` → `UserService` → `UserAdapter`), so it cannot take fakes. Keep its decisions in exported plain functions beside it and test those; the hook only wires React to them.
 - Type a fake with `satisfies`, never `as unknown as`.
 - Test data comes from the entity's testkit: `createTestUserEntity({ status: 'suspended' })`. Names shared between test files carry `Test` (`rules/typescript/conventions.md`).
-- A test that renders React Query gets a new `QueryClient` with `retry: false` per test (`createTestQueryClient()` when it is a shared helper). Interactions use `userEvent`, not `fireEvent`.
+- A test that renders React Query gets a new `QueryClient` with `retry: false` per test (`createTestQueryClient()` when it is a shared helper).
 
 A use case's `deps` names only the methods it calls (`rules/frontend/features.md`), so a fake holds only those:
 

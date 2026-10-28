@@ -48,7 +48,7 @@ usePrefetchQuery(UserQueries.detail({ id }));
 ```
 
 - Reads use `useSuspenseQuery`, so a widget renders with its data present; loading and errors are handled by the boundaries the page sets up.
-- The page starts the first screen's requests: `usePrefetchQuery` in a React SPA, a server-side `prefetchQuery` in Next.js (`rules/frontend/pages.md`).
+- The page starts the first screen's requests: `usePrefetchQuery` in a page rendered on the client (`rules/frontend/pages.md`), a server-side `prefetchQuery` in Next.js (`rules/frontend-web/nextjs.md`).
 
 Why options instead of hooks: a hook that bundled every read would run every query the moment it is called, and the same options serve `useSuspenseQuery`, `usePrefetchQuery`, `useQueries` and server prefetching.
 

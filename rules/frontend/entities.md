@@ -184,7 +184,7 @@ export { UserStatusBadge } from './ui/UserStatusBadge';
 ```
 
 - The adapter is exported as its instance (`UserAdapter`, value and type), never its create function, so no second instance can exist outside the slice. A monorepo package does the opposite and exports only the create function and its type (`rules/frontend/entity-data-access.md`).
-- DTOs, the mapper, `URLS`, `testkit` and `@x` stay out of it. Why explicit: one `export *` from `infrastructure/` publishes every DTO.
+- DTOs, the mapper, `URLS`, local tables (`rules/frontend/local-data.md`), `testkit` and `@x` stay out of it. Why explicit: one `export *` from `infrastructure/` publishes every DTO.
 
 ## Enforcement
 

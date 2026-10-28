@@ -68,6 +68,11 @@ expect_violation entity-infrastructure-internals src/features/probe/arch-probe.t
   "import type { UserDto } from '@/entities/user/infrastructure/dto/user.dto'; export type Probe = UserDto;"
 expect_violation fsd-layer-direction-entities src/entities/user/arch-probe.ts \
   "import { probe } from '@/features/probe'; export const userProbe = probe;"
-rm -r src/features
+# A local table stays inside infrastructure/ too (rules/frontend/local-data.md).
+mkdir -p src/entities/user/infrastructure/db
+printf '%s\n' "export type UserRow = { id: string };" > src/entities/user/infrastructure/db/user.table.ts
+expect_violation entity-infrastructure-internals src/features/probe/arch-probe.ts \
+  "import type { UserRow } from '@/entities/user/infrastructure/db/user.table'; export type Probe = UserRow;"
+rm -r src/features src/entities/user/infrastructure/db
 
 step "All checks passed"

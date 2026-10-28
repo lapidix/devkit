@@ -5,13 +5,13 @@ description: Use when reviewing frontend changes against the frontend rules, bef
 
 # Reviewing frontend changes
 
-A convention review: does the changed code follow `rules/frontend/*.md` and `rules/typescript/conventions.md`? Bugs are another review's job. Mechanical checks run first; the judgment checks in `checklist.md` need you to read the code.
+A convention review: does the changed code follow `rules/frontend/*.md`, its platform's `rules/frontend-web/*.md` or `rules/frontend-native/*.md`, and `rules/typescript/conventions.md`? Bugs are another review's job. Mechanical checks run first; the judgment checks in `checklist.md` need you to read the code.
 
 The rule files named here are in the project's `.claude/rules/{area}/` (`rules/frontend/testing.md` is `.claude/rules/frontend/testing.md`). When the project lacks one, read the copy that ships with this skill, in the `rules/` folder two levels above this skill's folder, and say in your report that the project does not have it; the `installing-rules` skill copies it in.
 
 ## Steps
 
-1. **Scope.** List the changed frontend files and, for each, the rule files that cover it (each rule's `paths:`). From `package.json`, note the framework (Next.js when `next` is a dependency, otherwise a React SPA) and the styling tool (Tailwind or not); several checks depend on them, and the report states them.
+1. **Scope.** List the changed frontend files and, for each, the rule files that cover it (each rule's `paths:`). From `package.json`, note the framework (Expo when `expo` or `react-native` is a dependency, Next.js when `next` is, otherwise a React SPA), whether an Expo app also builds for web (`react-native-web` is a dependency), and the styling tool (Tailwind or not); several checks depend on them, and the report states them.
    ```bash
    BASE=origin/main   # the PR's base; with no remote, the local base branch (main)
    FILES=$(git diff --name-only --diff-filter=ACMR "$BASE"...HEAD -- '*.ts' '*.tsx' '*.css' | grep -E '(^|/)(src|app)/')
@@ -29,7 +29,7 @@ The rule files named here are in the project's `.claude/rules/{area}/` (`rules/f
    g '\b(useMemo|useCallback)\(|\bmemo\(' '\.tsx?$'                      # manual memoization; React Compiler is on (react.md)
    g 'React\.FC|defaultProps|forwardRef\(' '\.tsx$'                       # component declaration (react.md)
    g 'window\.(alert|confirm)\(|Alert\.alert\(' '\.tsx?$'                 # native dialogs (react.md)
-   g "^['\"]use client['\"]" '/pages/|/layouts/|(^|/)app/.*(page|layout)\.tsx?$'   # pages, layouts, routes stay server components (react.md)
+   g "^['\"]use client['\"]" '/pages/|/layouts/|(^|/)app/.*(page|layout)\.tsx?$'   # Next.js: pages, layouts, routes stay server components (frontend-web/nextjs.md)
    g 'export \*' '/index\.tsx?$'                                          # public API is an explicit list (entities.md, features.md index.ts)
    g 'use(Suspense)?Query\(\{|useMutation\(\{|queryKey: \[' '\.tsx?$'     # inline React Query options or keys (react-query.md)
    g '\.reset\(' 'use[A-Z][A-Za-z]*Form\.ts$'                             # reset in a form hook; check it is not in an effect (forms-rhf-zod.md)
@@ -39,12 +39,18 @@ The rule files named here are in the project's `.claude/rules/{area}/` (`rules/f
    g "\bt\( *['\"][^'\"]+['\"] *, *['\"]" '\.tsx?$'                        # inline fallback text (i18n.md)
    g '\b(text|bg|border|ring|fill|stroke)-(slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-[0-9]{2,3}\b' '\.tsx$'   # raw palette (styling.md)
    g '#[0-9a-fA-F]{3,8}\b|style=\{\{' '\.tsx$'                            # hex values, inline style (styling.md)
-   g 'className=\{ *`' '\.tsx$'                                           # template-string class names (styling.md)
+   g 'className=\{ *`' '\.tsx$'                                           # template-string class names (frontend-web/styling.md)
    g 'toLocale(Date|Time)?String\(|dayjs\([^)]*\)\.format\(' '\.tsx$'     # formatting outside shared formatters (styling.md)
    g 'as unknown as' '\.test\.tsx?$'                                      # cast instead of satisfies (testing.md)
    g "vi\.mock\( *['\"](@/|\.\.?/)" '\.test\.tsx?$'                        # mocking our own module; add the app's alias (@web/) (testing.md)
    g "globalThis\.fetch *=|stubGlobal\( *['\"]fetch|spyOn\(globalThis, *['\"]fetch" '\.test\.tsx?$'   # a stubbed global fetch; give the shared client a fake fetch (testing.md)
    printf '%s\n' "$FILES" | grep -v 'env\.config\.ts$' | xargs grep -nE 'process\.env|import\.meta\.env' /dev/null   # env outside env.config.ts (shared.md)
+
+   # Expo apps only
+   g 'Platform\.OS' '\.tsx$'                                               # a platform branch in a component; use platform files (frontend-native/platform.md)
+   g 'crypto\.(randomUUID|getRandomValues)|\b(local|session)Storage\b' '\.tsx?$'   # web APIs React Native lacks (frontend-native/runtime.md)
+   g 'process\.env\[|\} *= *process\.env\b' 'env\.config\.ts$'           # EXPO_PUBLIC_* not read by full name (frontend-native/env.md)
+   g 'hitSlop=' '\.tsx$'                                                   # only when the app also builds for web: Pressable ignores it there (frontend-native/platform.md)
 
    # slices in scope without an index.ts (entities.md, features.md, widgets.md, pages.md index.ts)
    printf '%s\n' "$FILES" | sed -nE 's#^((.*/)?src/(entities|features|pages)/[^/]+)/.*#\1#p; s#^((.*/)?src/widgets/[^/]+/[^/]+)/.*#\1#p' | sort -u |
