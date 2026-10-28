@@ -1,0 +1,22 @@
+// rules/typescript/conventions.md, with the CommonJS and decorator settings of rules/server/nestjs.md
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": ["node"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": false,
+    "isolatedModules": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "outDir": "dist",
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": ["src", "test", "prisma.config.ts", "vitest.config.mts"]
+}

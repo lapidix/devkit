@@ -8,10 +8,13 @@ lapidix devkit is rules and skills for coding agents, not an application. `rules
 bash scripts/check-catalog.sh        # every rule and skill is listed in README.md and the catalog skill
 claude plugin validate . --strict    # the marketplace manifest
 claude plugin validate ./skills      # every skill's frontmatter
-shellcheck scripts/*.sh
+shellcheck scripts/*.sh examples/*.sh examples/*/check.sh
+bash examples/frontend/check.sh      # the entity slice example: tsc, Vitest, dependency-cruiser
+bash examples/nestjs/check.sh        # the NestJS module example: prisma generate, tsc, Vitest, dependency-cruiser
+bash examples/go/check.sh            # the Go module example: sqlc, build, vet, golangci-lint, tests, govulncheck
 ```
 
-CI runs them on every pull request, with a whitespace check on the diff (`.github/workflows/ci.yml`).
+CI runs the first four on every pull request, with a whitespace check on the diff (`.github/workflows/ci.yml`), and the three examples (`.github/workflows/examples.yml`). The Go example's database tests need `TEST_DATABASE_URL` pointing at a PostgreSQL 17 database; without it they skip, except under `CI=true`, where they fail.
 
 ## Layout
 
@@ -20,6 +23,8 @@ CI runs them on every pull request, with a whitespace check on the diff (`.githu
 rules/{area}/{topic}.md           copied into a project's .claude/rules/{area}/ by copy-rules.sh
 skills/{name}/SKILL.md            one skill per folder; its other files (checklist.md, example-*.md, configs) sit beside it
 scripts/                          copy-rules.sh, link-user.sh, check-catalog.sh
+examples/extract.sh               writes the files an example-*.md shows into a folder
+examples/{stack}/                 check.sh, and project/: the skeleton and pinned versions an example builds into (.build/, ignored)
 CHANGELOG.md                      changes that alter what a rule or skill asks of a project
 ```
 
@@ -29,11 +34,12 @@ CHANGELOG.md                      changes that alter what a rule or skill asks o
 - **One topic per file**, named after the topic, inside its area's folder.
 - **Stated as fact, in English.** "A feature slice holds one domain's use cases", not "you should put use cases in". The reason sits beside the rule, in the same sentence or in a `Why:` line after it.
 - **Code is complete.** A block that stands for a file names it in a first-line comment (`// shared/libs/http/http.client.ts`), and it compiles as shown once its imports are added.
+- **Skill examples are built.** In an `example-*.md`, each `## <path>` heading names a file and the first block under it is that file; a second block under the same heading is a variant and is not built. `examples/{stack}/check.sh` builds it with the pieces it assumes from `examples/{stack}/project/`, so a change to an example, or to a rule the support files follow, passes that script before it merges.
 - **Cite other rules by full path**, `rules/{area}/{file}.md`. `copy-rules.sh` reads these citations to list the areas a project lacks.
 
 ## Library facts
 
-A rule that names a library version, or says how a library behaves, is checked against that version before it changes: its changelog, its source, and the rule's code run against it in a scratch project, outside this repo. Raising a minimum version says in the rule what the older version gets wrong. The README's "What the rules assume" lists the versions; keep it in step.
+A rule that names a library version, or says how a library behaves, is checked against that version before it changes: its changelog, its source, and the rule's code run against it in a scratch project, outside this repo. Raising a minimum version says in the rule what the older version gets wrong. The README's "What the rules assume" lists the versions; keep it in step. `examples/*/project/` pins the versions the examples are checked against; a raised pin goes through the same checks.
 
 ## Skills
 

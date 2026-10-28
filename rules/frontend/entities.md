@@ -88,7 +88,7 @@ export function parseEmail(raw: string): Email {
 export function emailDomain(email: Email): string { … }
 ```
 
-Only values that have a validation rule and cross boundaries (form, API, domain) become value objects. With zod, `z.string().email().brand<'Email'>()` defines the same type.
+Only values that have a validation rule and cross boundaries (form, API, domain) become value objects. With zod 4, `z.email().brand<'Email'>()` defines the same type (`z.string().email()` is deprecated there; it is the zod 3 form).
 
 - **Rule set by an external standard** (`Email`, `PhoneNumber`, `Money`, `Url`, `DateRange`): `shared/vo/{name}.vo.ts`.
 - **Rule set by this product** (`Nickname`, `WorkloadName`): `domain/{name}.vo.ts` in the entity that owns the concept. Other entities get it through `@x`.

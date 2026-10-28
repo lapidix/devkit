@@ -1,0 +1,23 @@
+{
+  "name": "devkit-example-frontend",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check:arch": "depcruise src --config .dependency-cruiser.cjs"
+  },
+  "dependencies": {
+    "arthron": "2.1.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "dependency-cruiser": "18.7.0",
+    "typescript": "6.0.3",
+    "vite": "8.3.5",
+    "vitest": "5.0.5"
+  }
+}
