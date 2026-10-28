@@ -49,7 +49,7 @@ bash ~/devkit/scripts/copy-rules.sh ~/work/app typescript frontend frontend-web 
 | Go daemon | `go` `go-daemon` |
 | pnpm monorepo | add `monorepo` |
 
-For the database, PostgreSQL is `database/postgres` with `database/prisma` (NestJS) or `database/sqlc` (Go); MongoDB is `database/mongodb` with `database/mongoose` (NestJS) or `database/mongo-go-driver` (Go).
+For the database, PostgreSQL is `database/postgres` with `database/prisma` or `database/drizzle` (NestJS) or `database/sqlc` (Go); MongoDB is `database/mongodb` with `database/mongoose` (NestJS) or `database/mongo-go-driver` (Go).
 
 - `frontend` holds what any React app follows; `frontend-web` and `frontend-native` add what needs a browser or a device. A project copied before the split adds `frontend-web` on its next update, or the rules moved there stop loading.
 - `copy-rules.sh` takes areas (`frontend`) or single files (`database/postgres`), and lists the areas the copied rules cite that the project lacks, with the files that cite them; copy the ones that apply.
@@ -73,7 +73,7 @@ This links `~/.claude/rules/git` to the clone, so a `git pull` updates it (`CLAU
 - **Frontend**: React with React Compiler, TanStack Query v5, react-hook-form and zod, Vitest. Layers `app → pages → widgets → features → entities → shared`, with the domain model in `entities`. HTTP goes through [arthron](https://lapidix.github.io/arthron/) 2.1 or later; data kept on the device goes through local adapters beside it.
 - **Web**: a SPA or Next.js, with Tailwind when the project styles with it.
 - **Native**: Expo SDK 57 with expo-router (routes in a root `app/`), React Native 0.71 or later, react-native-gesture-handler 2; React Native for Web 0.21 when the app also builds for web.
-- **NestJS**: modules split into `domain`, `application` and `adapters/{in,out}`; zod DTOs with nestjs-zod; Prisma 7 or Mongoose; transactions through nestjs-cls; external APIs through arthron 2.1 or later; pino; Vitest with SWC.
+- **NestJS**: modules split into `domain`, `application` and `adapters/{in,out}`; zod DTOs with nestjs-zod; Prisma 7, Drizzle 0.44.4 or later, or Mongoose; transactions through nestjs-cls; external APIs through arthron 2.1 or later; pino; Vitest with SWC.
 - **Go**: the same module split under `internal/`; net/http with huma; sqlc, pgx and goose, or the MongoDB driver; caarlos0/env; slog; testify; golangci-lint.
 - **Go daemons**: one `Run(ctx)` per job under an errgroup in `internal/app`; gRPC with `grpc.NewClient`, TLS and heartbeats; a protobuf contract generated with buf from `tools/go.mod`; caarlos0/env; slog on stderr; goleak and bufconn in tests; static binaries released with checksums.
 - **Both servers** follow one HTTP contract (`rules/api/contract.md`): every response carries `result`, `message`, `timestamp`, `requestId` and `errorCode`; a create answers 201 with `{ id }`; a domain error's kind decides the status.
@@ -134,6 +134,7 @@ This links `~/.claude/rules/git` to the clone, so a `git pull` updates it (`CLAU
 | `database/postgres.md` | snake_case plural names, the type table (uuid, timestamptz, bigint, jsonb …), foreign keys and onDelete, partial indexes, connections and poolers |
 | `database/mongodb.md` | Engine rules: collection and field names, the value table, embedding or referencing, replica sets, indexes created by migrations |
 | `database/prisma.md` | Prisma 7: layout and the generated client, `@@map`/`@map` and types, the transaction client type, migrations with `migrate diff`, P2002, poolers |
+| `database/drizzle.md` | Drizzle with postgres-js: files and the injection token, transactions through nestjs-cls, column names and types, named constraints, `updatedAt` left out of the row, `drizzle-kit generate` with timestamped names (never `push`), `DrizzleQueryError`, `prepare: false`, migrations bundled into an Expo app |
 | `database/mongoose.md` | Mongoose: schema files, `timestamps` (updatedAt only), passing sessions, `.lean()`, autoIndex |
 | `database/sqlc.md` | sqlc, pgx and goose for Go: layout, `sqlc.yaml` type mapping, committed generated code, `updated_at` set by queries, `Conn` and `Run`, `IsUniqueViolation`, poolers |
 | `database/mongo-go-driver.md` | MongoDB Go driver v2: session transactions carried in ctx (and rerun), `bson` tags, `$currentDate`, duplicate-key checks, golang-migrate |

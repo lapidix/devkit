@@ -87,7 +87,7 @@ A change inside an existing slice, module or daemon job needs no skill: read the
 |---|---|
 | Any engine: ids, standard columns, time, money, migrations, indexes, list order, database tests | `database/conventions.md` |
 | The engine | `database/postgres.md`, `database/mongodb.md` |
-| The tool | `database/prisma.md`, `database/mongoose.md` (NestJS); `database/sqlc.md`, `database/mongo-go-driver.md` (Go) |
+| The tool | `database/prisma.md`, `database/drizzle.md`, `database/mongoose.md` (NestJS); `database/sqlc.md`, `database/mongo-go-driver.md` (Go) |
 
 **Repository**:
 

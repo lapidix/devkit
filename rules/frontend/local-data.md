@@ -21,7 +21,7 @@ entities/{domain}/infrastructure/
 shared/libs/db/                   the database handle, transactions and migrations
 ```
 
-- The database handle lives in `shared/libs/db` and is the only code that opens the database. A package gets it from the app through a setter (`rules/frontend-native/app.md`) and reads it when a method runs, never at import.
+- The database handle lives in `shared/libs/db` and is the only code that opens the database. With Drizzle, generating and bundling its migrations is in `rules/database/drizzle.md` ("On the device"). A package gets it from the app through a setter (`rules/frontend-native/app.md`) and reads it when a method runs, never at import.
 - An entity with both sources has two adapters. Neither knows the other: moving rows between them is a feature (`features/sync`), never an adapter.
 
 ## Adapter

@@ -82,7 +82,7 @@ export class PrismaUserRepository extends UserRepository {
 }
 ```
 
-- **Queries go through the client that joins the open transaction** (`rules/server/application.md`). How it is wired is in `rules/server/nestjs.md`; the client's type argument is explained in `rules/database/prisma.md`.
+- **Queries go through the client that joins the open transaction** (`rules/server/application.md`). How it is wired is in `rules/server/nestjs.md`; the client's type argument is explained in `rules/database/prisma.md`, and the same repository in Drizzle is in `rules/database/drizzle.md`.
 - **The mapper keeps rows inside `persistence/`.** `UserMapper.toDomain(row)` rebuilds through `User.fromSnapshot()`, and `toPersistence(user)` starts from `user.toSnapshot()`. No row type leaves the folder.
 - **Database errors become domain errors here.** A unique violation on the email becomes `UserEmailTakenError` (`kind: 'conflict'`); errors the adapter does not recognize are rethrown.
 

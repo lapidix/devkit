@@ -45,13 +45,14 @@ Apply the sections whose rule files cover the file under review. Each item names
 
 ## Database (`database/conventions.md`, the engine's and the ORM's files)
 
-- Names follow the engine: PostgreSQL tables and columns snake_case with plural tables (`@@map`/`@map` in Prisma); MongoDB collections snake_case plural, named explicitly.
-- Ids are created by the use case with `newId()`; no `@default` on the id column.
+- Names follow the engine: PostgreSQL tables and columns snake_case with plural tables (`@@map`/`@map` in Prisma, the column name as the first argument in Drizzle); MongoDB collections snake_case plural, named explicitly.
+- Ids are created by the use case with `newId()`; no `@default` (Prisma) or `.defaultRandom()` (Drizzle) on the id column.
 - Types: `uuid` ids, `timestamptz` moments, `date` calendar dates, money as `bigint` with a currency code, `jsonb` only for outside payloads; never a float for money, never a moment stored as a string.
 - References inside a module state their delete behavior and have an index; references to another module are ids without a foreign key, and no repository reads another module's tables.
 - Every index serves an existing query, carries a comment naming it, and is not the leading part of another index.
 - A migration only adds, unless it is release 2 of expand → contract: a new column is nullable or has a default, and becomes required only in release 2. A merged migration is never edited.
-- `created_at` comes from the aggregate; the ORM fills only `updated_at` (Mongoose `timestamps: { createdAt: false, updatedAt: true }`).
+- `created_at` comes from the aggregate; the ORM fills only `updated_at` (Mongoose `timestamps: { createdAt: false, updatedAt: true }`; Drizzle `defaultNow().$onUpdate(…)`, with `updatedAt` left out of the mapper's row).
+- Drizzle: unique constraints, indexes and foreign keys are named in the `database/postgres.md` shape; a unique violation is read from `DrizzleQueryError`'s `cause`, and its message, which holds the parameters, is not logged; no script runs `drizzle-kit push`.
 - MongoDB: every repository query chains `.session(this.txHost.tx)`; reads use `.lean()`.
 - Tests against a database exist only for database-specific behavior, use their own fresh ids, and never empty a table.
 
