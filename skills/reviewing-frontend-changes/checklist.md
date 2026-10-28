@@ -68,7 +68,7 @@ Apply the sections whose rule files cover the file under review. Each item names
 - `useForm` takes `zodResolver` with the entity's form schema; no validation written in the form.
 - The form hook returns `{ form, handleSubmit, isPending }` and takes screen reactions as options.
 - Its decisions (building the command, choosing a field for an error) are exported plain functions beside it, with tests.
-- `mode: 'onTouched'`; the submit button is disabled only while pending.
+- `mode: 'onTouched'`; the submit button is off while `formState.isValid` is false or the request is pending, never on `isDirty`; every rule that can keep it off is an empty required field or an error shown on a field, with cross-field checks given a `path`.
 - Sub-components take `form` as a prop; no `FormProvider`.
 - Edit forms pass loaded data to `defaultValues`.
 - Server-rejected values extend `ValidationError` and reach the field through the hook's `toFieldError`.
