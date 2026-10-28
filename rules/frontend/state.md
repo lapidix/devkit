@@ -6,7 +6,7 @@ paths:
 
 # Client state stores
 
-A store holds client state that several components share and that outlives any one of them. Server data stays in React Query; URL state goes through `useSearchParamState` (`rules/frontend/pages.md`).
+A store holds client state that several components share and that outlives any one of them. Server data stays in React Query; URL state, in a web app, goes through `useSearchParamState` (`rules/frontend-web/routing.md`).
 
 ## One tool per project
 

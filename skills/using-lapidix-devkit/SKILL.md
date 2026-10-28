@@ -30,20 +30,29 @@ A change inside an existing slice, module or daemon job needs no skill: read the
 
 ## Topics and rules
 
-**Frontend** (React, Next.js), with `typescript/conventions.md` for names, types and comments:
+**Frontend** (React, Next.js, Expo), with `typescript/conventions.md` for names, types and comments. `frontend/` holds for every React app; a web app adds `frontend-web/`, an Expo app `frontend-native/`:
 
 | Topic | Rule |
 |---|---|
 | Which layer code belongs in, and each layer's folders and public API | `frontend/app.md`, `frontend/pages.md`, `frontend/widgets.md`, `frontend/features.md`, `frontend/entities.md`, `frontend/shared.md` |
+| The app folder, routes and the root providers | `frontend-web/app.md` (SPA, Next.js), `frontend-native/app.md` (Expo) |
 | Calling the API: adapters, URL templates, the HTTP client, DTOs, mappers, time values | `frontend/entity-data-access.md` |
+| Data kept on the device: local adapters, transactions, migrations, React Query over local data | `frontend/local-data.md` |
 | What the server sends: the standard response, error codes, field errors | `api/contract.md` |
 | Use cases, services, query and mutation options, reacting to success and failure | `frontend/features.md`, `frontend/react-query.md` |
-| Components, effects, React Compiler, `'use client'` | `frontend/react.md` |
+| Components, effects, React Compiler | `frontend/react.md` |
+| `'use client'`, server-rendered pages, hydration | `frontend-web/nextjs.md` |
+| URL state | `frontend-web/routing.md` |
 | Forms, validation, a server rejection shown on a field | `frontend/forms-rhf-zod.md` |
 | Stores | `frontend/state.md` |
 | Translation keys | `frontend/i18n.md` |
-| Tokens, Tailwind, date and number formatting | `frontend/styling.md` |
-| Tests | `frontend/testing.md` |
+| Tokens, date and number formatting | `frontend/styling.md`, with `frontend-web/styling.md` (Tailwind) or `frontend-native/styling.md` (`StyleSheet`, theme) |
+| Accessibility | `frontend-web/accessibility.md`, `frontend-native/accessibility.md` |
+| Platform files, `Platform.OS`, React Native for Web | `frontend-native/platform.md` |
+| Web APIs React Native lacks, native modules | `frontend-native/runtime.md` |
+| `EXPO_PUBLIC_*` and env files in an Expo app | `frontend-native/env.md` |
+| Config plugins, prebuild, `expo install`, checking the bundle | `frontend-native/build.md` |
+| Tests | `frontend/testing.md`, with `frontend-web/testing.md` or `frontend-native/testing.md` |
 
 **Servers**: `api/contract.md` is the HTTP contract both follow.
 

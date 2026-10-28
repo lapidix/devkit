@@ -38,7 +38,7 @@ export function UserCard({ user, size = 'md', onSelect }: UserCardProps) {
 - A simple condition uses `&&`. When branches grow, `return` early. Never nest ternaries.
 - Repeated UI with the same structure is an array rendered with `map` when two of these hold: three or more items, items are expected to be added or removed, some items are conditional.
 - Use the product's dialog instead of `window.alert`, `window.confirm` or React Native's `Alert`. Native dialogs ignore the theme and language and do not show in some desktop shells.
-- Web accessibility: use semantic elements (`button`, `a`, `nav`), give every input a label, and give every `<button>` an explicit `type`.
+- Accessibility follows the platform: `rules/frontend-web/accessibility.md`, `rules/frontend-native/accessibility.md`.
 
 ## Memoization
 
@@ -60,9 +60,4 @@ React Compiler is on. Don't write `useMemo`, `useCallback` or `memo`, except for
 - An effect only synchronizes with an external system: subscriptions, browser events, a non-React widget. Data fetching goes through React Query (`rules/frontend/react-query.md`).
 - Async work in an effect drops late results with a cancel flag set in the cleanup.
 
-## Next.js
-
-- `'use client'` goes on widgets and on feature components that use hooks: the outermost components that need hooks or interaction. Pages, layouts and route files stay server components; a page prefetches on the server instead of calling hooks (`rules/frontend/pages.md`).
-- A server component inside a client component arrives as a slot (`children` or a prop), never as an import.
-
-Why: everything a client component imports becomes client code and re-renders with it. A server component passed as a slot is rendered once on the server and stays that way when the client component re-renders.
+Next.js server and client components are in `rules/frontend-web/nextjs.md`.

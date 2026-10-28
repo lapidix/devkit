@@ -49,10 +49,11 @@ Apply the sections whose rule files cover the file under review. Each item names
 ## pages and app (`pages.md`, `app.md`)
 
 - A page folder is named after its domain and holds only pages and `index.ts`.
-- The page starts the first screen's requests (`usePrefetchQuery` in an SPA, a server prefetch with `HydrationBoundary` in Next.js) and owns the `AsyncBoundary`.
+- The page starts the first screen's requests (`usePrefetchQuery` on the client, a server prefetch with `HydrationBoundary` in Next.js, `frontend-web/nextjs.md`) and owns the `AsyncBoundary`.
 - A page defines no hooks; a Next.js page calls none.
-- URL state (tabs, filters, sort, page number) goes through `useSearchParamState`.
-- Routes only map URLs to pages; providers wrap what the whole app needs once.
+- In a web app, URL state (tabs, filters, sort, page number) goes through `useSearchParamState` (`frontend-web/routing.md`).
+- Routes only map URLs or screens to pages; providers wrap what the whole app needs once.
+- In an Expo app, routes sit in a root `app/` set as the expo-router `root`, and providers and layouts in `src/app/`; `GestureHandlerRootView` is the outermost view (`frontend-native/app.md`).
 
 ## React (`react.md`)
 
@@ -60,7 +61,7 @@ Apply the sections whose rule files cover the file under review. Each item names
 - No component defined inside another; a component file exports only its component, its props type and its constants.
 - No nested ternaries; repeated UI uses an array and `map` when two of the three conditions hold.
 - Effects only synchronize with external systems; no derived state, no prop copied into state, resets through `key`, async work cancels late results.
-- Semantic elements, labelled inputs, buttons with an explicit `type`.
+- Web: semantic elements, labelled inputs, buttons with an explicit `type` (`frontend-web/accessibility.md`). Native: `role` and `aria-label` on pressables, toggle state in `aria-*`, 44-point touch targets (`frontend-native/accessibility.md`).
 
 ## Forms (`forms-rhf-zod.md`): form hooks and form components
 
@@ -89,7 +90,22 @@ Apply the sections whose rule files cover the file under review. Each item names
 
 - Colors and spacing come from tokens.
 - Dates, numbers and empty values go through the shared formatters.
-- With Tailwind, class names merge through `cn()`.
+- With Tailwind, class names merge through `cn()` (`frontend-web/styling.md`).
+- In React Native, styles are `StyleSheet` objects, colors come from the theme hook at render, and text is drawn by the themed text component (`frontend-native/styling.md`).
+
+## Native platform (`frontend-native/platform.md`, `frontend-native/runtime.md`, `frontend-native/env.md`)
+
+- A component that differs per platform is split into platform files with the same exports; no `Platform.OS` branch in its body.
+- A platform capability has one interface in `shared/libs/{subject}/` and one file per platform; native modules are imported only there.
+- No web API React Native lacks; ids, storage and dialogs go through `shared/libs`.
+- `env.config.ts` reads each `EXPO_PUBLIC_*` by its full name; no secret has the prefix.
+
+## Local data (`local-data.md`)
+
+- Device data goes through a local adapter in `infrastructure/db/`, which returns entities and creates no ids or times of its own.
+- Writes that must land together run in one transaction, through the transaction's handle only.
+- Writes outside `{D}Mutations` (sync, background work) invalidate the keys they touched.
+- Migrations only add; seeds are inserted by code that checks for them.
 
 ## Tests (`testing.md`)
 

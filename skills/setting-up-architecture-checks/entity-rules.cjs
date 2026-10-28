@@ -21,10 +21,10 @@ module.exports = [
   {
     name: 'entity-infrastructure-internals',
     comment:
-      "DTOs, mappers and URLS are the server's wire format. Only infrastructure/ uses them; the rest of the app gets entities through the adapter.",
+      "DTOs, mappers, URLS and local tables are the server's and the database's formats. Only infrastructure/ uses them; the rest of the app gets entities through the adapter.",
     severity: 'error',
     from: { pathNot: `${ENT}[^/]+/infrastructure/` },
-    to: { path: `${ENT}[^/]+/infrastructure/(dto/|mapper/|api/[^/]+\\.url\\.const\\.ts$)` },
+    to: { path: `${ENT}[^/]+/infrastructure/(dto/|mapper/|api/[^/]+\\.url\\.const\\.ts$|db/[^/]+\\.table\\.ts$)` },
   },
   {
     name: 'entity-infrastructure-same-slice',

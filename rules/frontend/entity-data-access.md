@@ -20,6 +20,8 @@ entities/{domain}/infrastructure/
 
 `infrastructure/` exports exactly one thing through the slice's `index.ts`: the adapter instance (value and type). DTOs, URLs and the mapper are used inside `infrastructure/` only, so the server's wire format never reaches the rest of the app.
 
+Data kept on the device goes through a local adapter beside this one, in `infrastructure/db/` (`rules/frontend/local-data.md`). An entity with both sources exports the two adapter instances, and still nothing else from `infrastructure/`.
+
 ## Adapter
 
 ```ts
