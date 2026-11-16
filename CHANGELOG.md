@@ -2,6 +2,12 @@
 
 What changed for projects that use these rules and skills, newest first. Every commit on `main` is a release (README, "Install"); this file lists the ones that change what a rule or skill asks of a project.
 
+## 2026-11-16
+
+### Added
+
+- Skill `refactoring-go-daemons`: carries out an `auditing-go-daemons` plan one step at a time. Each component gets a characterization test on the old code first, each commit is a move or a change but never both, its type comes from whether an assertion changed, and each step ends with `reviewing-go-daemon-changes` on its diff.
+
 ## 2026-10-28
 
 ### Changed

@@ -3,7 +3,7 @@
 Rules and skills for Claude Code and Codex, for building apps on one architecture: a layered React frontend (a SPA, Next.js or an Expo app), NestJS or Go servers built domain first around ports and adapters, and one HTTP contract between them. Go daemons — long-running programs with no inbound port that dial out to their server — get rules and skills of their own.
 
 - **Rules** are the conventions. Each has `paths:` frontmatter, so Claude Code loads it only while it works on matching files, and Codex reads an index of them in `AGENTS.md`: folder structure, naming, errors, transactions, tests.
-- **Skills** are the procedures: install the rules, scaffold a frontend entity, a server module or a daemon, review a change against the rules, audit and upgrade a daemon, set up architecture checks, write a pull request.
+- **Skills** are the procedures: install the rules, scaffold a frontend entity, a server module or a daemon, review a change against the rules, audit, refactor and upgrade a daemon, set up architecture checks, write a pull request.
 
 The examples are run, not just written. `examples/` builds the frontend slice, the NestJS and Go example modules and the example daemon into projects with pinned dependencies, and CI checks them on every pull request: tsc and Vitest for the two TypeScript examples; sqlc, golangci-lint, the race detector, the database tests against PostgreSQL and govulncheck for the Go module; buf lint, golangci-lint for Linux, the race detector with goleak and govulncheck for the daemon; and the architecture checks against planted violations for the three web examples. The review checks were tried against planted violations.
 
@@ -173,6 +173,7 @@ This links `~/.claude/rules/git` to the clone, so a `git pull` updates it (`CLAU
 | `scaffolding-go-daemons` | Create a Go daemon, or add a job or a connection to one, with an example daemon that builds, lints and passes its tests |
 | `reviewing-go-daemon-changes` | Review Go daemon changes against the rules before a PR |
 | `auditing-go-daemons` | Check a whole daemon against the rules and order the fixes |
+| `refactoring-go-daemons` | Carry out a daemon audit's plan one step at a time, each change pinned by a test first and reviewed |
 | `upgrading-go-daemons` | Upgrade a daemon's Go version, tools or dependencies, change its contract, and cut a release |
 | `setting-up-architecture-checks` | Install or repair architecture checks: dependency-cruiser (`check:arch`) for TypeScript apps and monorepos, `internal/archtest` for Go |
 | `writing-pull-requests` | Open a pull request, or write its title and body |
