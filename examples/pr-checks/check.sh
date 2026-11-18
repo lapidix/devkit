@@ -165,6 +165,17 @@ case_verified_empty_item() { repo_init; expect 1 --base main --no-diff --body "$
 PR body: Verification needs a **Verified** list with at least one item; write - None when there are none (git/pull-request.md)
 E
 }
+# the lists belong in the section the template puts them in, and a numbered list is a list
+case_verified_lists_elsewhere() { repo_init
+  f=$(good_body | awk '/^\*\*Verified\*\*$/ {v=1} v && /^$/ {v=0; print "Ran it."} v {l = l $0 "\n"; next} {print} END {printf "%s", l}' | body_file body)
+  expect 1 --base main --no-diff --body "$f" <<'E'
+PR body: the **Verified** list belongs in Verification, not Notes (git/pull-request.md)
+PR body: the **Not verified** list belongs in Verification, not Notes (git/pull-request.md)
+E
+}
+case_verified_numbered() { repo_init
+  expect 0 --base main --no-diff --body "$(body_with -e 's/^- `bash check.sh`/1. `bash check.sh`/' -e 's/^- None$/1. None/')" </dev/null
+}
 case_project_template_without_markers() { repo_init
   printf '## Summary\n\n## Test plan\n- [ ] tested\n' | put .github/PULL_REQUEST_TEMPLATE.md; commit t
   expect 0 --base main --no-diff --body "$(printf '## Summary\nFixes it.\n\n## Test plan\n- [x] tested\n' | body_file body)" </dev/null

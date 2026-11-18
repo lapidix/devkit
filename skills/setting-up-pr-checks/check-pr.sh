@@ -132,7 +132,13 @@ body_awk() { # body_awk TEMPLATE BODY: prints the violations of B1 to B4 and the
     -v max_scope="$PR_MAX_SCOPE_CHARS" -v max_notes="$PR_MAX_NOTES_CHARS" \
     -v max_words="$PR_MAX_SENTENCE_WORDS" "$awk_lib"'
 function nonempty(s) { s = trim(s); sub(/^([-*+]|[0-9]+\.)([ \t]+|$)/, "", s); return trim(s) != "" }
-function item(s) { s = trim(s); return s ~ /^[-*+]([ \t]|$)/ }
+function item(s) { s = trim(s); return s ~ /^([-*+]|[0-9]+\.)([ \t]|$)/ }
+# a Verification list that is missing, or sits in another section than the template puts it in
+function lists(m, name) {
+  if (cnt[m] >= 1) return
+  if (m in away) print "PR body: the **" name "** list belongs in " substr(tname[vsec], 4) ", not " substr(away[m], 4) " (" rule ")"
+  else print "PR body: " substr(tname[vsec], 4) " needs a **" name "** list with at least one item; write - None when there are none (" rule ")"
+}
 # A prose chunk (a paragraph or one list item) ends here: warn on each long sentence in it.
 function flush(   n, j, k, q) {
   if (chunk == "") return
@@ -175,9 +181,12 @@ FILENAME != cur_file { cur_file = FILENAME; fence = 0; inc = 0; phase = (FILENAM
     # a fenced block, blank lines included, belongs to the paragraph it sits in
     if (t == "" && !fl) inpara = 0
     else if (!inpara) { inpara = 1; paras[sec]++ }
-    if (t == "**Verified**") mk = "V"
-    else if (t == "**Not verified**") mk = "N"
-    else if (mk != "" && item(t)) { sub(/^[-*+]/, "", t); if (trim(t) != "") cnt[mk]++ }
+    if (t == "**Verified**" || t == "**Not verified**") {
+      m = (t == "**Verified**") ? "V" : "N"
+      if (bname[sec] == tname[vsec]) mk = m
+      else { mk = ""; away[m] = bname[sec] }
+    }
+    else if (mk != "" && item(t)) { sub(/^([-*+]|[0-9]+\.)/, "", t); if (trim(t) != "") cnt[mk]++ }
   }
   if (phase == 2) {
     t = trim(text)
@@ -203,8 +212,8 @@ END {
     if (bidx[bname[p]] == p && (bname[p] in tidx) && !has[p])
       print "PR body: section \"" bname[p] "\" is empty; write None when there is nothing to say (" rule ")"
   if (vsec && nsec && vsec == nsec && (tname[vsec] in bidx)) {
-    if (cnt["V"] < 1) print "PR body: Verification needs a **Verified** list with at least one item; write - None when there are none (" rule ")"
-    if (cnt["N"] < 1) print "PR body: Verification needs a **Not verified** list with at least one item; write - None when there are none (" rule ")"
+    lists("V", "Verified")
+    lists("N", "Not verified")
   }
   flush()
   for (p = 1; p <= bn; p++) {
