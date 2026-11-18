@@ -294,6 +294,23 @@ PR body: `WithdrawUser` is not in the repository; if it is not code, drop the ba
 E
 }
 
+case_refs_dot_slash()     { refs_init
+  f=$(printf -- '- `./internal/user/service.go`\n- `./`\n' | refs_body); expect 0 --base main --no-diff --body "$f" </dev/null
+  f=$(printf -- '- `./internal/user/svc.go`\n' | refs_body); expect 1 --base main --no-diff --body "$f" <<'E'
+PR body: `./internal/user/svc.go` does not exist (git/pull-request.md)
+E
+}
+case_refs_not_paths_hosts_products() { refs_init
+  f=$(printf -- '- `docs.example.com/a.html`\n- `Next.js`\n- `Node.js`\n' | refs_body); expect 0 --base main --no-diff --body "$f" </dev/null
+}
+case_refs_library_names() { refs_init
+  f=$(printf -- '- `os.Getenv`\n- `JSON.stringify`\n- `NODE_ENV`\n- `ERR_CODE`\n' | refs_body); expect 0 --base main --no-diff --body "$f" </dev/null
+}
+case_refs_line_range()    { refs_init; f=$(printf -- '- `internal/user/service.go:1-99`\n' | refs_body); expect 1 --base main --no-diff --body "$f" <<'E'
+PR body: `internal/user/service.go:1-99` is past the end of internal/user/service.go (1 lines) (git/pull-request.md)
+E
+}
+
 # runner
 
 mkdir -p "$build"

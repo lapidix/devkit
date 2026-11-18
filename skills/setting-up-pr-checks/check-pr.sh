@@ -203,10 +203,15 @@ END {
 ' "$@"
 }
 
-refs_awk() { # refs_awk BODY: prints one TAB-separated candidate per backtick span outside code (B5)
+# refs_awk BODY: prints one TAB-separated candidate per backtick span outside code (B5).
+# A span is a path (ends in /, is a dotfile, or has a known extension; a leading ./ is dropped) or an
+# identifier (camelCase, PascalCase or snake_case with a lowercase letter, no dot). Skipped as not from
+# this repository: hosts (docs.example.com/a.html), product names (Next.js), dotted library APIs
+# (os.Getenv) and names with no lowercase letter (NODE_ENV).
+refs_awk() {
   LC_ALL=C awk '
 function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
-function span(s,   tok, ln, p, last, ext, isdir, ispath, id) {
+function span(s,   tok, ln, p, first, last, ext, isdir, ispath, id) {
   tok = s
   if (s == "" || (tok in seen)) return
   seen[tok] = 1
@@ -217,15 +222,21 @@ function span(s,   tok, ln, p, last, ext, isdir, ispath, id) {
     ln = (p[2] != "") ? p[2] : p[1]
     s = substr(s, 1, RSTART - 1)
   }
+  while (s ~ /^\.\//) s = substr(s, 3)
   if (s == "" || s ~ /^[-#@$~\/]/ || s ~ /[]*{}<>=|@[]/ || index(s, "://") || s ~ /^v?[0-9][0-9.]*$/) return
   last = s; sub(/.*\//, "", last)
   isdir = (s ~ /\/$/)
   ext = ""
   if (match(last, /\.[A-Za-z0-9]+$/)) ext = substr(last, RSTART + 1)
   ispath = isdir || last ~ /^\.[A-Za-z0-9_-]+$/ || (ext != "" && index(" md go ts tsx js jsx mjs cjs json yml yaml sql sh toml mod sum proto txt env lock css html ", " " ext " "))
-  if (ispath) { print "P\t" s "\t" ln + 0 "\t" tok; return }
-  if (s ~ /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*(\(\))?$/ && (s ~ /[_.]/ || s ~ /[a-z][A-Z]/)) {
-    sub(/\(\)$/, "", s); sub(/.*\./, "", s)
+  if (ispath) {
+    first = s; sub(/\/.*/, "", first)
+    if (index(s, "/") && first ~ /^[^.]/ && index(first, ".")) return
+    if (!index(s, "/") && s ~ /^[A-Z].*\.js$/) return
+    print "P\t" s "\t" ln + 0 "\t" tok; return
+  }
+  if (s ~ /^[A-Za-z_][A-Za-z0-9_]*(\(\))?$/ && s ~ /[a-z]/ && (s ~ /_/ || s ~ /[a-z][A-Z]/)) {
+    sub(/\(\)$/, "", s)
     print "I\t" s "\t0\t" tok
   }
 }
