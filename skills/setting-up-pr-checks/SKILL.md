@@ -15,7 +15,7 @@ The rule files named here are in the project's `.claude/rules/{area}/`. When the
    - whether the project runs GitHub Actions (a `.github/workflows/` folder); if it uses another CI, stop and report it, because the workflow below is GitHub's
    - whether `.github/PULL_REQUEST_TEMPLATE.md` exists
    - the paths of committed generated code: the sqlc output folder, buf's `gen/`, and any other generated source in the repository
-   - whether the project already runs `copy-rules.sh --agents-md`, and whether the team wants limits other than the defaults (1,000 changed lines, three paragraphs in Why, and so on, listed in the header of `check-pr.sh`)
+   - whether the project already runs `copy-rules.sh --agents-md`, and whether the team wants limits other than the defaults (1,000 changed lines, three paragraphs in Why, and so on, listed in `defaults` at the top of `check-pr.sh`)
 
    Done when you know the CI, whether the template exists, every generated path, and whether `--agents-md` and custom limits apply.
 
@@ -23,7 +23,7 @@ The rule files named here are in the project's `.claude/rules/{area}/`. When the
    - Copy `check-pr.sh` to `scripts/check-pr.sh`.
    - A project without `.github/PULL_REQUEST_TEMPLATE.md` gets one from the template in `rules/git/pull-request.md` (`## Body`). Without a template GitHub opens PRs with an empty body, and the author has no list of the headers the check requires.
    - Copy the rule the check cites: `bash scripts/copy-rules.sh <project> git/pull-request`. When step 1 found `--agents-md` in use, the flag goes before `<project>`: `bash scripts/copy-rules.sh --agents-md <project> git/pull-request`. Only this file: the check is a team rule once CI enforces it, so teammates and their agents must be able to read what it requires, and the violation messages name this file. `git/commit.md` stays a personal format and is not copied. Find `copy-rules.sh` in the project's `scripts/`, else two levels above this folder.
-   - Create `.github/pr-checks.env` only when step 1 found other limits: one `PR_NAME=number` per line, names as in the header of `check-pr.sh`. The file is parsed, never sourced, and an unknown name exits 2.
+   - Create `.github/pr-checks.env` only when step 1 found other limits: one `PR_NAME=number` per line, names as in `defaults` at the top of `check-pr.sh`. The file is parsed, never sourced, and an unknown name exits 2.
 
    Done when `scripts/check-pr.sh` exists, `.claude/rules/git/pull-request.md` exists, the template exists, and `.github/pr-checks.env` exists only if the limits differ.
 
