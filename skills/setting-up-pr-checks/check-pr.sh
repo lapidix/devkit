@@ -574,7 +574,7 @@ check_ratio() {
   failed=1
 }
 
-# D1 to D4: size, comment blocks, comment share, restating comments.
+# D1 to D4: size, comment blocks, comment share, long sentences in comments.
 check_diff() {
   check_size
   check_comments
