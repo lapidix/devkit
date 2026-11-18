@@ -3,6 +3,8 @@
 # each case_<name> function builds a repository, runs the script and compares its output
 # and exit code with what the case expects.
 # Usage: bash examples/pr-checks/check.sh
+# The case_* functions are called through "$case_name".
+# shellcheck disable=SC2317,SC2329
 set -euo pipefail
 
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -58,8 +60,7 @@ compare() { # compare STREAM EXIT ARGS..., expected output on stdin
 expect() { compare out "$@"; }     # expect EXIT ARGS..., stdout on stdin
 expect_err() { compare err "$@"; } # expect_err EXIT ARGS..., stderr on stdin
 
-# cases (called through "$case_name", which shellcheck cannot follow)
-# shellcheck disable=SC2317,SC2329
+# cases
 
 case_usage_no_base()     { repo_init; expect_err 2 <<'E'
 usage: check-pr.sh --base <ref> [--body <file>] [--no-diff]
