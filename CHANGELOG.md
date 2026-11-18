@@ -2,6 +2,20 @@
 
 What changed for projects that use these rules and skills, newest first. Every commit on `main` is a release (README, "Install"); this file lists the ones that change what a rule or skill asks of a project.
 
+## 2026-11-18
+
+### Added
+
+- Skill `setting-up-pr-checks` with `check-pr.sh`: a GitHub Actions job runs the script on every pull request and exits 1 on a violation. It checks the PR body against the template (headers, section limits, backtick references), the size (1,000 changed lines, lockfiles and files marked `linguist-generated` in `.gitattributes` not counted) and the comments an added line carries in Go, TypeScript and SQL files (blocks of at most 3 lines, comments at most half of the added lines from 20 added lines, sentences of at most 25 words). `.github/pr-checks.env` changes the numbers. A project adopts the check by running `setting-up-pr-checks`, then marks the `pr-checks` job as required in branch protection.
+
+### Changed
+
+- `git/pull-request.md`: Why is at most 3 paragraphs and 1,500 characters, Changes 3,000, Out of scope & follow-ups and Notes 1,000 each. A section with nothing to say contains `None`; an empty section used to be allowed and reads as forgotten. A path or a name in backticks exists in the repository, at the PR head or its base. Not checked: commands, globs, placeholders, dotted names such as `os.Getenv`, names with no lowercase letter such as `NODE_ENV`, host-like paths, product names such as `Next.js`, and ignored paths. A PR changes at most 1,000 lines, and a larger one says in Notes why it could not be split. A sentence has at most 25 words, from the plain language principles of ISO 24495-1. A project writes `None` in each empty section of its PR habit.
+- `go/conventions.md`, `typescript/conventions.md`, `database/conventions.md`: a comment block is at most 3 lines, comments are at most half of the lines a PR adds (from 20 added lines), a comment sits at the line it explains, and a sentence has at most 25 words. Longer reasoning goes in the PR body or the commit message. Code that carried longer comments gets them cut or moved.
+- `writing-pull-requests`: a new Check step runs `check-pr.sh` on the body file before the PR is created, and a section with nothing to say gets `None` where the skill used to accept "deliberately left empty".
+- `reviewing-frontend-changes`, `reviewing-go-changes`, `reviewing-go-daemon-changes` and `reviewing-server-changes` run `scripts/check-pr.sh --base <base>` when the project has it and record its output.
+- `installing-rules`: a project that enforces the PR check in CI gets `git/pull-request.md` from `setting-up-pr-checks`, not from the `git` area, which stays personal.
+
 ## 2026-10-28
 
 ### Changed
