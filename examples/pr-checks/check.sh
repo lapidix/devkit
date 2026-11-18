@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2317,SC2329
 # Runs skills/setting-up-pr-checks/check-pr.sh against fixture repositories in .build/:
 # each case_<name> function builds a repository, runs the script and compares its output
 # and exit code with what the case expects.
 # Usage: bash examples/pr-checks/check.sh
 # The case_* functions are called through "$case_name".
-# shellcheck disable=SC2317,SC2329
 set -euo pipefail
 
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
