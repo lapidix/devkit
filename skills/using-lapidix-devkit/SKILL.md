@@ -21,6 +21,7 @@ Rules are the conventions; skills are the procedures. A rule the project install
 | Create a Go daemon, or add a job or a connection to one | `scaffolding-go-daemons` |
 | Review Go daemon changes before a PR | `reviewing-go-daemon-changes` |
 | Check a whole Go daemon against the rules | `auditing-go-daemons` |
+| Refactor an existing Go daemon toward the rules, one audit step at a time | `refactoring-go-daemons` |
 | Upgrade a Go daemon's Go, tools or dependencies, change its contract, cut a release | `upgrading-go-daemons` |
 | Install or repair architecture checks | `setting-up-architecture-checks` |
 | Install or repair the PR check in CI | `setting-up-pr-checks` |

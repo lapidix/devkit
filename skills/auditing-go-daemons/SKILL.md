@@ -44,4 +44,4 @@ The rule files named here are in the project's `.claude/rules/{area}/` (`rules/f
    - the findings grouped by file, one row each: `file:line | rule (file and section) | fix | plan step`
    - the tool results, each with its command, and what could not be checked and why
 
-   Done when every file in scope appears in the report, every finding names its rule and its plan step, and nothing in the code has been changed: the audit reports, and the fixes are separate changes.
+   Done when every file in scope appears in the report, every finding names its rule and its plan step, and nothing in the code has been changed: the audit reports, and the fixes are separate changes, made with `refactoring-go-daemons`.
