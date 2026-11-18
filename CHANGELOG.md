@@ -11,6 +11,7 @@ What changed for projects that use these rules and skills, newest first. Every c
 
 ### Changed
 
+- `git/commit.md`: the first line, type included, is at most 72 characters; it used to be a 50-character summary, which did not say whether the type counted.
 - `git/pull-request.md`, section limits: Why is at most 3 paragraphs and 1,500 characters, Changes 3,000, Out of scope & follow-ups and Notes 1,000 each. A section with nothing to say contains `None`; an empty section used to be allowed and now fails the check.
 - `git/pull-request.md`, references: a path that contains a `/`, a file name without one (looked up anywhere in the repository), or a plain name, in backticks exists in the repository, at the PR head or its base, and a line number after a path or a file name is within the file. A `.js` name or a dotfile without a `/`, such as `decimal.js` or `.gitattributes`, is not checked, nor are commands, globs, placeholders, dotted names such as `os.Getenv`, names with no lowercase letter such as `NODE_ENV`, host-like paths and ignored paths.
 - `git/pull-request.md`, size and sentences: a PR changes at most 1,000 lines, and a larger one says in Notes why it could not be split; a sentence has at most 25 words, from the plain language principles of ISO 24495-1. The check only warns on both and exits 0.
