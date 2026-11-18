@@ -23,6 +23,10 @@ done
 root=$(git rev-parse --show-toplevel)
 git rev-parse --verify --quiet "$base^{commit}" >/dev/null || die "base $base not found"
 [ -z "$body" ] || [ -f "$body" ] || die "body file $body not found"
+# The diff checks read base...HEAD and B5 reads the base; without a merge base (a shallow clone, an
+# unrelated branch) git diff fails inside a process substitution and every check would pass.
+git merge-base "$base" HEAD >/dev/null 2>&1 ||
+  die "no merge base between $base and HEAD; fetch more history (git fetch --unshallow) or pass another --base"
 
 defaults="PR_MAX_LINES=1000 PR_MAX_WHY_PARAGRAPHS=3 PR_MAX_WHY_CHARS=1500 PR_MAX_CHANGES_CHARS=3000 \
 PR_MAX_SCOPE_CHARS=1000 PR_MAX_NOTES_CHARS=1000 PR_MAX_SENTENCE_WORDS=25 PR_MAX_COMMENT_LINES=3 \
@@ -155,7 +159,8 @@ FILENAME != cur_file { cur_file = FILENAME; fence = 0; inc = 0; phase = (FILENAM
   } else if (sec && active) {
     if (nonempty(text)) has[sec] = 1
     c = t; gsub(/[\200-\277]/, "", c); chars[sec] += length(c)
-    if (t == "") inpara = 0
+    # a fenced block, blank lines included, belongs to the paragraph it sits in
+    if (t == "" && !fl) inpara = 0
     else if (!inpara) { inpara = 1; paras[sec]++ }
     if (t == "**Verified**") mk = "V"
     else if (t == "**Not verified**") mk = "N"
@@ -204,14 +209,15 @@ END {
 }
 
 # refs_awk BODY: prints one TAB-separated candidate per backtick span outside code (B5).
-# A span is a path (ends in /, is a dotfile, or has a known extension; a leading ./ is dropped) or an
-# identifier (camelCase, PascalCase or snake_case with a lowercase letter, no dot). Skipped as not from
-# this repository: hosts (docs.example.com/a.html), product names (Next.js), dotted library APIs
-# (os.Getenv) and names with no lowercase letter (NODE_ENV).
+# A span is a path (has a / once a leading ./ is dropped, and ends in /, a dotfile or a known
+# extension) or an identifier (camelCase, PascalCase or snake_case with a lowercase letter, no dot).
+# Skipped as unsure: bare file names (decimal.js, README.md, .gitattributes), hosts
+# (docs.example.com/a.html), dotted library APIs (os.Getenv) and names with no lowercase letter
+# (NODE_ENV).
 refs_awk() {
   LC_ALL=C awk '
 function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
-function span(s,   tok, ln, p, first, last, ext, isdir, ispath, id) {
+function span(s,   tok, ln, p, first, last, ext, ispath) {
   tok = s
   if (s == "" || (tok in seen)) return
   seen[tok] = 1
@@ -225,14 +231,12 @@ function span(s,   tok, ln, p, first, last, ext, isdir, ispath, id) {
   while (s ~ /^\.\//) s = substr(s, 3)
   if (s == "" || s ~ /^[-#@$~\/]/ || s ~ /[]*{}<>=|@[]/ || index(s, "://") || s ~ /^v?[0-9][0-9.]*$/) return
   last = s; sub(/.*\//, "", last)
-  isdir = (s ~ /\/$/)
   ext = ""
   if (match(last, /\.[A-Za-z0-9]+$/)) ext = substr(last, RSTART + 1)
-  ispath = isdir || last ~ /^\.[A-Za-z0-9_-]+$/ || (ext != "" && index(" md go ts tsx js jsx mjs cjs json yml yaml sql sh toml mod sum proto txt env lock css html ", " " ext " "))
-  if (ispath) {
+  ispath = (s ~ /\/$/ || last ~ /^\.[A-Za-z0-9_-]+$/ || (ext != "" && index(" md go ts tsx js jsx mjs cjs json yml yaml sql sh toml mod sum proto txt env lock css html ", " " ext " ")))
+  if (ispath && index(s, "/")) {
     first = s; sub(/\/.*/, "", first)
-    if (index(s, "/") && first ~ /^[^.]/ && index(first, ".")) return
-    if (!index(s, "/") && s ~ /^[A-Z].*\.js$/) return
+    if (first ~ /^[^.]/ && index(first, ".")) return
     print "P\t" s "\t" ln + 0 "\t" tok; return
   }
   if (s ~ /^[A-Za-z_][A-Za-z0-9_]*(\(\))?$/ && s ~ /[a-z]/ && (s ~ /_/ || s ~ /[a-z][A-Z]/)) {
@@ -259,17 +263,21 @@ function span(s,   tok, ln, p, first, last, ext, isdir, ispath, id) {
     }
   }
   line = text line
+  # span() calls match() too, so the position of this span is saved first
   while (match(line, /`[^`]*`/)) {
-    span(substr(line, RSTART + 1, RLENGTH - 2))
-    line = substr(line, RSTART + RLENGTH)
+    rs = RSTART; rl = RLENGTH
+    span(substr(line, rs + 1, rl - 2))
+    line = substr(line, rs + rl)
   }
 }
 ' "$1"
 }
 
-# B5: a path or name in backticks exists in HEAD or the base. Unsure cases are skipped.
+# B5: a path or name in backticks exists in HEAD or the base. Unsure cases are skipped. A line
+# number passes when any file at HEAD that the path names is that long (an app-relative path in a
+# monorepo names one file per app).
 check_refs() {
-  local cands files kind a n tok p res found hf lines rc=0
+  local cands files kind a n tok p res found hfs hf lines long longf rc=0
   cands=$(refs_awk "$body")
   [ -n "$cands" ] || return 0
   files=$({ git -C "$root" -c core.quotepath=off ls-tree -r --name-only HEAD | sed 's/^/H /'
@@ -286,17 +294,22 @@ BEGIN { p = ENVIRON["P"]; lp = length(p) }
   f = substr($0, 3)
   sfx = (f == p || (length(f) > lp && substr(f, length(f) - lp) == "/" p))
   if (sfx || index(f, p "/") == 1 || index(f, "/" p "/") > 0) found = 1
-  if (sfx && !hf && substr($0, 1, 1) == "H") hf = f
+  if (sfx && substr($0, 1, 1) == "H") hf[++nh] = f
 }
-END { printf "%s\t%s", found ? "Y" : "N", hf }' <(printf '%s\n' "$files"))
-      found=${res%%$'\t'*}
-      hf=${res#*$'\t'}
+END { print found ? "Y" : "N"; for (i = 1; i <= nh; i++) print hf[i] }' <(printf '%s\n' "$files"))
+      found=${res%%$'\n'*}
+      hfs=""
+      case $res in *$'\n'*) hfs=${res#*$'\n'} ;; esac
       if [ "$found" != Y ]; then
-        echo "PR body: \`$tok\` does not exist (git/pull-request.md)"
-      elif [ "$n" -gt 0 ] && [ -n "$hf" ]; then
-        lines=$(git -C "$root" cat-file blob "HEAD:$hf" | LC_ALL=C awk 'END { print NR }')
-        if [ "$n" -gt "$lines" ]; then
-          echo "PR body: \`$tok\` is past the end of $hf ($lines lines) (git/pull-request.md)"
+        echo "PR body: \`$tok\` does not exist; if it is not a path in this repository, drop the backticks (git/pull-request.md)"
+      elif [ "$n" -gt 0 ] && [ -n "$hfs" ]; then
+        long=-1
+        while IFS= read -r hf; do
+          lines=$(git -C "$root" cat-file blob "HEAD:$hf" | LC_ALL=C awk 'END { print NR }')
+          if [ "$lines" -gt "$long" ]; then long=$lines; longf=$hf; fi
+        done <<<"$hfs"
+        if [ "$n" -gt "$long" ]; then
+          echo "PR body: \`$tok\` is past the end of $longf ($long lines) (git/pull-request.md)"
         fi
       fi
     else
@@ -333,11 +346,22 @@ check_body() {
 }
 
 
-# is_generated PATH: a lockfile, or a file marked linguist-generated in .gitattributes.
+# is_generated PATH: a lockfile, a Go file whose first 10 lines at HEAD hold Go's generated-code
+# header (also honoured by golangci-lint and GitHub), or a file marked linguist-generated in
+# .gitattributes.
 is_generated() {
   local value
   case ${1##*/} in
     package-lock.json | pnpm-lock.yaml | yarn.lock | bun.lock | go.sum) return 0 ;;
+  esac
+  case $1 in
+    *.go)
+      # awk reads to the end so git never gets SIGPIPE, which pipefail would report
+      if git -C "$root" cat-file blob "HEAD:$1" 2>/dev/null |
+        LC_ALL=C awk 'NR <= 10 && /^\/\/ Code generated .* DO NOT EDIT\.$/ { f = 1 } END { exit !f }'; then
+        return 0
+      fi
+      ;;
   esac
   value=$(git -C "$root" check-attr linguist-generated -- "$1" | sed 's/^.*: //')
   [ "$value" = set ] || [ "$value" = true ]
@@ -376,8 +400,12 @@ comments_awk() { # comments_awk PATH RULE LANG(go|ts|sql) DIFF FILE
   LC_ALL=C awk -v path="$1" -v rule="$2" -v lang="$3" -v max_lines="$PR_MAX_COMMENT_LINES" \
     -v max_words="$PR_MAX_SENTENCE_WORDS" '
 function trim(s) { gsub(/^[ \t\r]+|[ \t\r]+$/, "", s); return s }
+# Tool comments: Go directives, generated-file headers, migration and query annotations (goose, sqlc
+# -- name:, drizzle --> statement-breakpoint), swaggo // @Summary-style lines, linter and coverage
+# switches, license tags.
 function istool(t) {
   return t ~ /^\/\/go:/ || t ~ /^\/\/nolint/ || t ~ /^\/\/ ?Code generated/ || t ~ /^-- [+]goose/ ||
+    t ~ /^-- name: / || t ~ /^--> statement-breakpoint/ || t ~ /^\/\/ @[A-Z]/ ||
     t ~ /eslint-(disable|enable)/ || t ~ /@ts-(expect-error|ignore|nocheck)/ || t ~ /^\/\/\/ <reference/ ||
     t ~ /SPDX-License-Identifier/ || t ~ /biome-ignore/ || t ~ /prettier-ignore/ || t ~ /(v8|c8|istanbul) ignore/
 }
@@ -386,13 +414,14 @@ function instring(p,   q) {
   q = sprintf("%c", 39)
   return (split(p, tmp, "\"") - 1) % 2 || (split(p, tmp, q) - 1) % 2 || (split(p, tmp, "`") - 1) % 2
 }
-# the position of the first tok in t that is outside a string; 0 when there is none
-function outside(t, tok,   off, p) {
-  off = 0
-  while ((p = index(t, tok)) > 0) {
-    if (!instring(substr(t, 1, off + p - 1))) return off + p
+# the position of the first tok in t outside a string and not escaped (\/* in a regular
+# expression); 0 when there is none
+function outside(t, tok,   off, p, rest) {
+  off = 0; rest = t
+  while ((p = index(rest, tok)) > 0) {
+    if (!instring(substr(t, 1, off + p - 1)) && substr(t, off + p - 1, 1) != "\\") return off + p
     off += p
-    t = substr(t, p + 1)
+    rest = substr(rest, p + 1)
   }
   return 0
 }

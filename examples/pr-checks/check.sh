@@ -72,6 +72,16 @@ check-pr.sh: base nope not found
 E
 }
 case_clean_diff_only()   { repo_init; printf 'x\n' | put a.txt; commit a; expect 0 --base main </dev/null; }
+# an unrelated base, or a shallow clone, has no merge base to diff from
+case_no_merge_base()     { repo_init
+  (cd "$build/repo" && git checkout -q --orphan other && git_t commit -q -m orphan && git checkout -q pr)
+  expect_err 2 --base other <<'E'
+check-pr.sh: no merge base between other and HEAD; fetch more history (git fetch --unshallow) or pass another --base
+E
+  expect_err 2 --base other --no-diff --body "$(good_body | body_file body)" <<'E'
+check-pr.sh: no merge base between other and HEAD; fetch more history (git fetch --unshallow) or pass another --base
+E
+}
 case_config_bad_line()   { repo_init; printf 'PR_MAX_LINES=ten\n' | put .github/pr-checks.env; commit c; expect_err 2 --base main <<'E'
 .github/pr-checks.env:1: expected PR_NAME=number
 E
@@ -187,6 +197,15 @@ case_why_paragraphs()    { repo_init; printf 'one\n\ntwo\n\nthree\n\nfour\n' | {
 PR body: Why has 4 paragraphs, at most 3 (git/pull-request.md)
 E
 }; }
+# blank lines inside a fenced block (a stack trace) do not start paragraphs
+case_why_fence_one_paragraph() { repo_init
+  f=$(printf 'It panics on start. The trace shows where.\n\n```\npanic: boom\n\ngoroutine 1 [running]:\n\nmain.main()\n```\n' | body_section Why)
+  expect 0 --base main --no-diff --body "$f" </dev/null
+  f=$(printf 'one\n\ntwo\n\nthree\n\n```\npanic: boom\n\nmain.main()\n```\n' | body_section Why)
+  expect 1 --base main --no-diff --body "$f" <<'E'
+PR body: Why has 4 paragraphs, at most 3 (git/pull-request.md)
+E
+}
 case_why_chars()         { repo_init; f=$(rep a 1501 | body_section Why); expect 1 --base main --no-diff --body "$f" <<'E'
 PR body: Why has 1501 characters, at most 1500 (git/pull-request.md)
 E
@@ -245,23 +264,24 @@ PR body: Why has 4 paragraphs, at most 3 (git/pull-request.md)
 E
 }
 
-# refs_init: main has internal/user/service.go (one line), old.go and a .gitignore; pr drops old.go
+# refs_init: main has internal/user/service.go (one line), internal/old.go and a .gitignore; pr drops
+# internal/old.go
 refs_init() {
   repo_init
   git -C "$build/repo" checkout -q main
   printf 'func (s *Service) Withdraw() {}\n' | put internal/user/service.go
-  printf 'func OldName() {}\n' | put old.go
+  printf 'func OldName() {}\n' | put internal/old.go
   printf 'node_modules/\n' | put .gitignore
   commit refs
   git -C "$build/repo" checkout -q -B pr
-  git -C "$build/repo" rm -q old.go
+  git -C "$build/repo" rm -q internal/old.go
   commit drop
 }
 # refs_body: good_body with its Changes section replaced by stdin; prints the file path
 refs_body() { body_section Changes; }
 
 case_refs_missing_path()  { refs_init; f=$(printf -- '- `internal/user/svc.go`\n' | refs_body); expect 1 --base main --no-diff --body "$f" <<'E'
-PR body: `internal/user/svc.go` does not exist (git/pull-request.md)
+PR body: `internal/user/svc.go` does not exist; if it is not a path in this repository, drop the backticks (git/pull-request.md)
 E
 }
 case_refs_missing_ident() { refs_init; f=$(printf -- '- `WithdrawUser`\n' | refs_body); expect 1 --base main --no-diff --body "$f" <<'E'
@@ -269,7 +289,7 @@ PR body: `WithdrawUser` is not in the repository; if it is not code, drop the ba
 E
 }
 case_refs_ok()            { refs_init
-  f=$(printf -- '- `user/service.go`\n- `internal/user/`\n- `s.Withdraw()`\n- `OldName`\n- `old.go`\n- `.gitignore`\n' | refs_body)
+  f=$(printf -- '- `user/service.go`\n- `internal/user/`\n- `s.Withdraw()`\n- `OldName`\n- `internal/old.go`\n' | refs_body)
   expect 0 --base main --no-diff --body "$f" </dev/null
 }
 case_refs_line()          { refs_init; f=$(printf -- '- `internal/user/service.go:99`\n' | refs_body); expect 1 --base main --no-diff --body "$f" <<'E'
@@ -286,7 +306,7 @@ case_refs_skipped_words() { refs_init
   expect 0 --base main --no-diff --body "$f" </dev/null
 }
 case_refs_in_fence_ignored() { refs_init
-  f=$(printf '```\n`Nope.go`\n```\n- fine\n' | refs_body)
+  f=$(printf '```\n`internal/Nope.go`\n```\n- fine\n' | refs_body)
   expect 0 --base main --no-diff --body "$f" </dev/null
 }
 case_refs_dedup()         { refs_init; f=$(printf -- '- `WithdrawUser`\n- again `WithdrawUser`\n' | refs_body); expect 1 --base main --no-diff --body "$f" <<'E'
@@ -297,7 +317,7 @@ E
 case_refs_dot_slash()     { refs_init
   f=$(printf -- '- `./internal/user/service.go`\n- `./`\n' | refs_body); expect 0 --base main --no-diff --body "$f" </dev/null
   f=$(printf -- '- `./internal/user/svc.go`\n' | refs_body); expect 1 --base main --no-diff --body "$f" <<'E'
-PR body: `./internal/user/svc.go` does not exist (git/pull-request.md)
+PR body: `./internal/user/svc.go` does not exist; if it is not a path in this repository, drop the backticks (git/pull-request.md)
 E
 }
 case_refs_not_paths_hosts_products() { refs_init
@@ -308,6 +328,27 @@ case_refs_library_names() { refs_init
 }
 case_refs_line_range()    { refs_init; f=$(printf -- '- `internal/user/service.go:1-99`\n' | refs_body); expect 1 --base main --no-diff --body "$f" <<'E'
 PR body: `internal/user/service.go:1-99` is past the end of internal/user/service.go (1 lines) (git/pull-request.md)
+E
+}
+# a span after a path on the same line is checked too, in a list item and in a table row
+case_refs_spans_after_path() { refs_init
+  f=$(printf -- '- `internal/user/service.go` adds `WithdrawUser`\n' | refs_body); expect 1 --base main --no-diff --body "$f" <<'E'
+PR body: `WithdrawUser` is not in the repository; if it is not code, drop the backticks (git/pull-request.md)
+E
+  f=$(printf -- '| `internal/user/service.go` | adds `WithdrawUser` |\n' | refs_body); expect 1 --base main --no-diff --body "$f" <<'E'
+PR body: `WithdrawUser` is not in the repository; if it is not code, drop the backticks (git/pull-request.md)
+E
+}
+# a file name without a / may be a package or a file elsewhere; it is not checked
+case_refs_bare_names_skipped() { refs_init
+  f=$(printf -- '- `decimal.js`\n- `chart.js`\n- `.gitattributes`\n- `UserCard.tsx`\n' | refs_body); expect 0 --base main --no-diff --body "$f" </dev/null
+}
+# in a monorepo the same app-relative path names several files; one long enough is enough
+case_refs_line_any_match() { repo_init
+  lines 10 | put apps/admin/src/app/page.tsx; lines 200 | put apps/web/src/app/page.tsx; commit apps
+  f=$(printf -- '- `src/app/page.tsx:150`\n' | refs_body); expect 0 --base main --no-diff --body "$f" </dev/null
+  f=$(printf -- '- `src/app/page.tsx:250`\n' | refs_body); expect 1 --base main --no-diff --body "$f" <<'E'
+PR body: `src/app/page.tsx:250` is past the end of apps/web/src/app/page.tsx (200 lines) (git/pull-request.md)
 E
 }
 
@@ -403,6 +444,68 @@ case_block_slash_star_in_trailing() { repo_init
   expect 0 --base main </dev/null
   printf 'SELECT 1; -- see /* x\nSELECT 2;\nSELECT 3;\nSELECT 4;\n' | put m.sql; commit d
   expect 0 --base main </dev/null
+}
+# /\/*$/ is a regular expression, not the start of a block comment
+case_block_escaped_slash_star() { repo_init
+  put x.ts <<'T'
+export const trim = (p: string) => p.replace(/\/*$/, '')
+export const a = 1
+export const b = 2
+export const c = 3
+export const d = 4
+export const e = 5
+T
+  commit b
+  expect 0 --base main </dev/null
+}
+# a /* after a string that holds /* still opens a block
+case_block_after_string_with_slash_star() { repo_init
+  printf 'package a\n\nvar s = "a/*" /* one\ntwo\nthree\nfour\nfive */\n' | put a.go; commit b
+  expect 1 --base main <<'E'
+a.go:4: comment block of 4 lines, at most 3 (go/conventions.md)
+E
+}
+# sqlc query annotations, drizzle breakpoints and swaggo annotations are tool comments
+case_tool_sqlc_name()    { repo_init
+  printf -- '-- GetUser reads deleted users too,\n-- so the handler can tell them apart\n-- from users that never existed.\n-- name: GetUser :one\nSELECT * FROM users WHERE id = $1;\n' | put query.sql; commit q
+  expect 0 --base main </dev/null
+}
+case_tool_drizzle_swaggo() { repo_init
+  printf 'CREATE TABLE t (id int);\n--> statement-breakpoint\n-- t_id serves the lookup by id\n-- that the user page runs\n-- on every request.\nCREATE INDEX t_id ON t (id);\n' | put drizzle/0001_init.sql
+  printf 'package a\n\n// GetUser godoc\n// @Summary Get a user\n// @Param id path string true "user id"\n// @Success 200 {object} string\n// @Router /users/{id} [get]\nfunc GetUser() {}\n' | put a.go; commit b
+  expect 0 --base main </dev/null
+}
+case_ratio_sqlc_queries() { repo_init
+  awk 'BEGIN { for (i = 1; i <= 7; i++) { print "-- Get" i " skips soft-deleted rows."; print "-- name: Get" i " :one"; print "SELECT * FROM t" i " WHERE deleted_at IS NULL;" } }' | put query.sql; commit q
+  expect 0 --base main </dev/null
+}
+# Go marks a generated file with a header line, which golangci-lint and GitHub honour too
+case_generated_go_header() { repo_init
+  put user.pb.go <<'T'
+// Code generated by protoc-gen-go. DO NOT EDIT.
+// versions:
+//   protoc-gen-go v1.36.6
+//   protoc        (unknown)
+// source: user/v1/user.proto
+
+package userv1
+T
+  { printf '// Code generated by sqlc. DO NOT EDIT.\n\npackage db\n\n'; lines 1001 | sed 's/^line /var v/; s/$/ = 1/'; } | put db/q.go
+  commit g
+  expect 0 --base main </dev/null
+  repo_init
+  put user.pb.go <<'T'
+// versions:
+//   protoc-gen-go v1.36.6
+//   protoc        (unknown)
+// source: user/v1/user.proto
+
+package userv1
+T
+  commit g
+  expect 1 --base main <<'E'
+user.pb.go:1: comment block of 4 lines, at most 3 (go/conventions.md)
+E
 }
 case_comment_sentence()  { repo_init; printf 'package a\n\n// %s\n' "$(awk 'BEGIN { for (i = 1; i <= 26; i++) printf "w%d ", i }' | sed 's/ $/./')" | put a.go; commit b
   expect 0 --base main <<'E'
