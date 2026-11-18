@@ -50,8 +50,8 @@ module.exports = {
   ],
 
   options: {
-    // A generated client stays in the graph, so the server rules can forbid importing it, but its
-    // internals are not followed: Prisma's generated client imports itself in cycles.
+    // A generated client stays in the graph, so the server rules can forbid importing it.
+    // Its internals are not followed: Prisma's generated client imports itself in cycles.
     doNotFollow: { path: ['node_modules', '(^|/)src/generated/'] },
     tsPreCompilationDeps: true,
     // Maps every app's path alias (rules/monorepo/workspace.md). A single app can point at tsconfig.json.

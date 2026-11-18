@@ -503,11 +503,7 @@ case_shipped_code_passes() {
     bash "$repo/examples/extract.sh" "$ex" "$build/repo/shipped/$(basename "$(dirname "$ex")")/$(basename "$ex" .md)" >/dev/null
   done
   commit shipped
-  (cd "$build/repo" && PR_MAX_LINES=100000 bash "$script" --base main >"$build/out.txt" 2>"$build/err.txt") || status=$?
-  # Sentence-length warnings (D4) do not block, so only blocking lines and stderr count here.
-  if [ "${status:-0}" != 0 ] || grep -qv '^warning: ' "$build/out.txt" || [ -s "$build/err.txt" ]; then
-    { echo "FAIL $case_name (exit ${status:-0}, want 0 and no blocking line)"; cat "$build/out.txt" "$build/err.txt"; } >>"$fails"
-  fi
+  PR_MAX_LINES=100000 expect 0 --base main </dev/null
 }
 
 # runner

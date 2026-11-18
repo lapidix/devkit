@@ -522,8 +522,8 @@ func (c *Client) session(ctx context.Context) (registered bool, err error) {
 	var lastRecv atomic.Int64
 	lastRecv.Store(time.Now().UnixNano())
 	g, gctx := errgroup.WithContext(ctx)
-	// The stream was opened under ctx, so cancelling gctx alone would wake neither a blocked Recv nor a
-	// blocked Send: when one goroutine fails, end the stream itself.
+	// The stream was opened under ctx, so cancelling gctx wakes no blocked Recv or Send.
+	// When one goroutine fails, end the stream itself.
 	stop := context.AfterFunc(gctx, cancel)
 	defer stop()
 	g.Go(func() error { return c.receive(gctx, stream, &lastRecv) })

@@ -203,8 +203,8 @@ func isTechnical(path string) bool {
 	return false
 }
 
-// checkDomainUses enforces rule 3's second half: from its domain an inbound adapter uses only
-// value lists — constants, their named types and the package-level slices that list them.
+// checkDomainUses enforces rule 3's second half. From its domain an inbound adapter uses only
+// value lists: constants, their named types and the package-level slices that list them.
 func checkDomainUses(pkg *packages.Package, file *ast.File, domainPath string, report func(int, string)) {
 	ast.Inspect(file, func(n ast.Node) bool {
 		id, ok := n.(*ast.Ident)
