@@ -528,17 +528,16 @@ check_comments() {
 }
 
 # D3 (blocking): added comment lines may be at most PR_MAX_COMMENT_PERCENT of the added code
-# lines (comments included), once there are PR_MIN_LINES_FOR_RATIO of them.
+# lines, once comment and code lines together reach PR_MIN_LINES_FOR_RATIO.
 check_ratio() {
-  local percent rules="" total=$((comment_total + code_total))
-  [ "$total" -ge "$PR_MIN_LINES_FOR_RATIO" ] || return 0
-  [ $((comment_total * 100)) -gt $((PR_MAX_COMMENT_PERCENT * total)) ] || return 0
-  percent=$((comment_total * 100 / total))
+  local rules=""
+  [ $((comment_total + code_total)) -ge "$PR_MIN_LINES_FOR_RATIO" ] || return 0
+  [ $((comment_total * 100)) -gt $((PR_MAX_COMMENT_PERCENT * code_total)) ] || return 0
   [ "$seen_go" -eq 0 ] || rules="go/conventions.md"
   [ "$seen_typescript" -eq 0 ] || rules="$rules${rules:+, }typescript/conventions.md"
   [ "$seen_database" -eq 0 ] || rules="$rules${rules:+, }database/conventions.md"
-  printf 'PR: comments are %s%% of added code lines (%s of %s), at most %s%% (%s)\n' \
-    "$percent" "$comment_total" "$total" "$PR_MAX_COMMENT_PERCENT" "$rules"
+  printf 'PR: %s added comment lines for %s added code lines, at most %s%% of the code lines (%s)\n' \
+    "$comment_total" "$code_total" "$PR_MAX_COMMENT_PERCENT" "$rules"
   failed=1
 }
 

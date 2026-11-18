@@ -96,7 +96,7 @@ MongoDB fields follow the same order; while both shapes exist, the server reads 
 
 ## Comments
 
-A comment says why, never what, in English declarative sentences. A comment block is at most 3 lines, a comment sits at the line it explains, and a sentence has at most 25 words. Comments are at most half of the comment and code lines a PR adds in Go, TypeScript/JavaScript and SQL files. Blank lines, delimiter-only lines (`/*`, `*/`) and tool comments are not counted, and generated files are left out. The rule applies from 20 such lines. Tool comments are goose's `-- +goose Up`, sqlc's `-- name: GetUser :one` and drizzle's `--> statement-breakpoint`. The one-line index comment above fits these limits. The reader is the next developer to change the schema; the limits follow ISO 24495-1's principles (relevant, findable, understandable, usable).
+A comment says why, never what, in English declarative sentences. A comment block is at most 3 lines, a comment sits at the line it explains, and a sentence has at most 25 words. Comments are at most half of the code lines a PR adds in Go, TypeScript/JavaScript and SQL files. Blank lines, delimiter-only lines (`/*`, `*/`) and tool comments are not counted, and generated files are left out. The rule applies once comment and code lines together reach 20. Tool comments are goose's `-- +goose Up`, sqlc's `-- name: GetUser :one` and drizzle's `--> statement-breakpoint`. The one-line index comment above fits these limits. The reader is the next developer to change the schema; the limits follow ISO 24495-1's principles (relevant, findable, understandable, usable).
 
 ## List queries
 

@@ -150,7 +150,7 @@ return ErrUserAlreadyWithdrawn // a second withdraw would overwrite the withdraw
 - API documentation is not a comment: huma's `doc` tags and an operation's `Summary` are read by the API's users, so their language is chosen for those readers, by the project.
 - The examples in these rule files keep English comments, matching the rule text.
 - A comment block is at most 3 lines. A line holding only a delimiter (`/*`, `/**`, `*/`) and a tool comment are not counted. Longer reasoning goes in the PR body or the commit message.
-- Comments are at most half of the comment and code lines a PR adds in Go, TypeScript/JavaScript and SQL files. Blank lines, delimiter-only lines and tool comments are not counted, and generated files are left out. The rule applies from 20 such lines, so a small PR that only documents existing code is not blocked.
+- Comments are at most half of the code lines a PR adds in Go, TypeScript/JavaScript and SQL files: 10 added code lines allow 5 added comment lines. Blank lines, delimiter-only lines and tool comments are not counted, and generated files are left out. The rule applies once comment and code lines together reach 20, so a small PR that only documents existing code is not blocked.
 - A comment sits at the line it explains, above it or at its end.
 - A sentence has at most 25 words.
 

@@ -538,16 +538,25 @@ ratio_ts() { # ratio_ts BLOCKS EXTRA: the same shape without the package line
 }
 case_ratio_over()        { repo_init; ratio_go 6 1 | put b.go; commit b
   expect 1 --base main <<'E'
-PR: comments are 60% of added code lines (12 of 20), at most 50% (go/conventions.md)
+PR: 12 added comment lines for 8 added code lines, at most 50% of the code lines (go/conventions.md)
 E
 }
 case_ratio_mixed_rules() { repo_init; ratio_go 3 0 | put b.go; ratio_ts 3 1 | put x.ts; commit b
   expect 1 --base main <<'E'
-PR: comments are 60% of added code lines (12 of 20), at most 50% (go/conventions.md, typescript/conventions.md)
+PR: 12 added comment lines for 8 added code lines, at most 50% of the code lines (go/conventions.md, typescript/conventions.md)
 E
 }
-case_ratio_exact_half()  { repo_init; ratio_go 5 4 | put b.go; commit b
+# the share is of code lines alone: 10 comment lines need 20 code lines, and as many as the code fail
+case_ratio_exact_half()  { repo_init; ratio_go 5 14 | put b.go; commit b
   expect 0 --base main </dev/null
+  ratio_go 5 13 | put b.go; commit c
+  expect 1 --base main <<'E'
+PR: 10 added comment lines for 19 added code lines, at most 50% of the code lines (go/conventions.md)
+E
+  ratio_go 5 4 | put b.go; commit d
+  expect 1 --base main <<'E'
+PR: 10 added comment lines for 10 added code lines, at most 50% of the code lines (go/conventions.md)
+E
 }
 case_ratio_below_min()   { repo_init; printf -- '-- one\n' | put m.sql; commit b
   expect 0 --base main </dev/null
