@@ -423,7 +423,18 @@ case_block_jsdoc()       { repo_init; printf '/**\n * one\n * two\n * three\n */
 x.ts:1: comment block of 4 lines, at most 3 (typescript/conventions.md)
 E
 }
-case_block_tool_split()  { repo_init; printf 'package a\n\n// a\n// b\n//go:generate x\n// c\n// d\n' | put a.go; commit b
+# a tool comment neither counts nor ends a block, so prose on both sides of it is one block
+case_block_tool_inside() { repo_init; printf 'package a\n\n// a\n// b\n//go:generate x\n// c\n// d\n' | put a.go; commit b
+  expect 1 --base main <<'E'
+a.go:3: comment block of 4 lines, at most 3 (go/conventions.md)
+E
+}
+# staticcheck directives and test or JSX pragmas are tool comments
+case_tool_lint_and_pragmas() { repo_init
+  printf 'package a\n\n//lint:ignore SA1019 the old API stays until v2\n// one\n// two\n// three\nvar x = 1\n' | put a.go
+  printf '// @vitest-environment jsdom\n// one\n// two\n// three\nexport const x = 1\n' | put x.test.ts
+  printf '/** @jsxImportSource preact */\n// @ts-check\n// one\n// two\n// three\nexport const y = 1\n' | put y.tsx
+  commit b
   expect 0 --base main </dev/null
 }
 case_block_trailing()    { repo_init; printf 'package a\n\nvar a = 1 // why\nvar b = 2 // why\nvar c = 3 // why\nvar d = 4 // why\n' | put a.go; commit b

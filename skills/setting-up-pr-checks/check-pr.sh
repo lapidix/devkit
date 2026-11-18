@@ -405,18 +405,20 @@ check_size() {
 
 # comments_awk: reads the hunks of `git diff -U0` (first file), then the file as of HEAD (second).
 # Prints D2 violations and D4 warnings, then `counts <added comment lines> <added code lines>`.
-# A block is a run of comment lines; a blank, code or tool-comment line ends it, a delimiter line
-# (/*, /**, */, **/ alone) neither counts nor ends it.
+# A block is a run of comment lines; a blank or code line ends it, and a delimiter line (/*, /**,
+# */, **/ alone) or a tool comment neither counts nor ends it.
 comments_awk() { # comments_awk PATH RULE LANG(go|ts|sql) DIFF FILE
   LC_ALL=C awk -v path="$1" -v rule="$2" -v lang="$3" -v max_lines="$PR_MAX_COMMENT_LINES" \
     -v max_words="$PR_MAX_SENTENCE_WORDS" "$awk_lib"'
 # Tool comments: Go directives, generated-file headers, migration and query annotations (goose, sqlc
 # -- name:, drizzle --> statement-breakpoint), swaggo // @Summary-style lines, linter and coverage
-# switches, license tags.
+# switches, test environment and JSX pragmas, license tags.
 function istool(t) {
-  return t ~ /^\/\/go:/ || t ~ /^\/\/nolint/ || t ~ /^\/\/ ?Code generated/ || t ~ /^-- [+]goose/ ||
+  return t ~ /^\/\/go:/ || t ~ /^\/\/nolint/ || t ~ /^\/\/lint:(ignore|file-ignore) / ||
+    t ~ /^\/\/ ?Code generated/ || t ~ /^-- [+]goose/ ||
     t ~ /^-- name: / || t ~ /^--> statement-breakpoint/ || t ~ /^\/\/ @[A-Z]/ ||
-    t ~ /eslint-(disable|enable)/ || t ~ /@ts-(expect-error|ignore|nocheck)/ || t ~ /^\/\/\/ <reference/ ||
+    t ~ /eslint-(disable|enable)/ || t ~ /@ts-(expect-error|ignore|nocheck|check)/ || t ~ /^\/\/\/ <reference/ ||
+    t ~ /@(vitest|jest)-environment / || t ~ /@jsxImportSource / ||
     t ~ /SPDX-License-Identifier/ || t ~ /biome-ignore/ || t ~ /prettier-ignore/ || t ~ /(v8|c8|istanbul) ignore/
 }
 # an odd number of quote characters before a position means it sits inside a string
@@ -472,9 +474,9 @@ phase == 1 {
   if (kind == "C" && (t == "/*" || t == "/**" || t == "*/" || t == "**/")) kind = "D"
   else if (kind == "C" && istool(t)) kind = "T"
   isadd = (FNR in added)
-  if (kind == "C" || kind == "D") {
+  if (kind == "C" || kind == "D" || kind == "T") {
     if (!bopen) { bopen = 1; bstart = FNR; bcnt = 0; badd = 0; btext = "" }
-    if (isadd) badd = 1
+    if (isadd && kind != "T") badd = 1
     if (kind == "C") {
       bcnt++
       if (isadd) ncomment++
