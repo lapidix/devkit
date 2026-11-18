@@ -492,6 +492,24 @@ case_workflow_run_script() {
   fi
 }
 
+# Everything devkit ships to a project (the architecture check files and the code the skill
+# examples scaffold) must pass the comment checks it enforces on the project's pull requests.
+case_shipped_code_passes() {
+  local arch=skills/setting-up-architecture-checks ex
+  repo_init
+  mkdir -p "$build/repo/$arch"
+  cp "$repo/$arch/"*.cjs "$repo/$arch/"*.go "$build/repo/$arch/"
+  for ex in "$repo"/skills/*/example-*.md; do
+    bash "$repo/examples/extract.sh" "$ex" "$build/repo/shipped/$(basename "$(dirname "$ex")")/$(basename "$ex" .md)" >/dev/null
+  done
+  commit shipped
+  (cd "$build/repo" && PR_MAX_LINES=100000 bash "$script" --base main >"$build/out.txt" 2>"$build/err.txt") || status=$?
+  # Sentence-length warnings (D4) do not block, so only blocking lines and stderr count here.
+  if [ "${status:-0}" != 0 ] || grep -qv '^warning: ' "$build/out.txt" || [ -s "$build/err.txt" ]; then
+    { echo "FAIL $case_name (exit ${status:-0}, want 0 and no blocking line)"; cat "$build/out.txt" "$build/err.txt"; } >>"$fails"
+  fi
+}
+
 # runner
 
 mkdir -p "$build"

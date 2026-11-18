@@ -1,12 +1,6 @@
 /**
- * Architecture checks. Copy to the repository root as `.dependency-cruiser.cjs`, with the rule
- * files in `.dependency-cruiser/`. It runs once from the root:
- *
- *   monorepo     depcruise apps packages --config .dependency-cruiser.cjs
- *   single app   depcruise src --config .dependency-cruiser.cjs   (delete the package section)
- *
- * Keep the rule sets the repository needs: fsd and entity rules for frontend apps, server rules for
- * a server (rules/server/architecture.md). A monorepo with both keeps all of them.
+ * Architecture checks; setup and the depcruise commands are in the setting-up-architecture-checks
+ * skill. Keep the rule sets the repository needs (rules/server/architecture.md).
  */
 const fsdRules = require('./.dependency-cruiser/fsd-rules.cjs');
 const entityRules = require('./.dependency-cruiser/entity-rules.cjs');

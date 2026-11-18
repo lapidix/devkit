@@ -1,10 +1,7 @@
-// Monorepo package rules (rules/monorepo/workspace.md). Paths are relative to the repository
-// root, where the check runs.
-//
-//   allowed  { [packageDir]: string[] } the packages each package may import
-//   entries  extra entry-point regexes, one per subpath export (src/index.ts is always allowed)
+// Monorepo package rules (rules/monorepo/workspace.md). Paths are relative to the repository root.
 const fs = require('node:fs');
 
+// allowed: { [packageDir]: string[] } the packages each may import; entries: extra entry-point regexes
 module.exports = function packageRules({ allowed, entries = [], packagesDir = 'packages' }) {
   // A package missing from the table gets no pkg-graph rule and may import anything unnoticed.
   const dirs = fs
