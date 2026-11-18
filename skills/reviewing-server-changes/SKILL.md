@@ -21,7 +21,7 @@ The rule files named here are in the project's `.claude/rules/{area}/` (`rules/f
 
    A server rule applies to all server code, even where its `paths:` would not load it while writing (`runtime.md` forbids `console` in a module too).
 
-2. **Tools.** Run the project's `check:arch`, `check-types` and test scripts from `package.json`, and `biome check` on `FILES`. When the project has `scripts/check-pr.sh`, run `git fetch origin <base>`, then `bash scripts/check-pr.sh --base "$BASE"` from the repository root (diff checks only), and record its output. Record each command and its result. A check that cannot run goes in the report with the reason.
+2. **Tools.** Run the project's `check:arch`, `check-types` and test scripts from `package.json`, and `biome check` on `FILES`. When the project has `scripts/check-pr.sh`, run `git fetch origin <base>`, then `bash scripts/check-pr.sh --base "$BASE"` from the repository root (diff checks only), and record its output. Without it, skip the script: the project's rules may predate the comment limits, so the checklist's comment items follow the project's own `conventions.md`. Record each command and its result. A check that cannot run goes in the report with the reason.
 
 3. **Grep checks.** Run every command below. Read each hit: comments, strings and legitimate exceptions can match.
 
