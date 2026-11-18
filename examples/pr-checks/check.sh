@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC2317,SC2329
+# shellcheck disable=SC2016,SC2317,SC2329
 # Runs skills/setting-up-pr-checks/check-pr.sh against fixture repositories in .build/:
 # each case_<name> function builds a repository, runs the script and compares its output
 # and exit code with what the case expects.
 # Usage: bash examples/pr-checks/check.sh
-# The case_* functions are called through "$case_name".
+# The case_* functions are called through "$case_name" (SC2317, SC2329). The single-quoted sed and
+# printf scripts hold backticks and $ on purpose (SC2016).
 set -euo pipefail
 
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -229,6 +230,20 @@ case_sentence_skips_code() { repo_init; f=$(printf '```\n%s.\n```\n> %s.\n| %s |
   expect 0 --base main --no-diff --body "$f" </dev/null
 }
 case_sentence_list_items() { repo_init; f=$(printf -- '- %s.\n- %s.\n' "$(words 20)" "$(words 20)" | body_section Changes); expect 0 --base main --no-diff --body "$f" </dev/null; }
+
+case_why_paragraphs_after_bare_issue() { repo_init
+  f=$(good_body | sed -e '/^Resolves #1$/{n;d;}' -e '/^Readers need/c\
+one\
+\
+two\
+\
+three\
+\
+four' | body_file body)
+  expect 1 --base main --no-diff --body "$f" <<'E'
+PR body: Why has 4 paragraphs, at most 3 (git/pull-request.md)
+E
+}
 
 # runner
 

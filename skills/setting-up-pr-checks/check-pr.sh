@@ -140,7 +140,7 @@ FILENAME != cur_file { cur_file = FILENAME; fence = 0; inc = 0; phase = (FILENAM
   if (!fence && text ~ /^## /) {
     if (phase == 2) flush()
     if (phase == 1) { tn++; tname[tn] = t; tidx[t] = tn }
-    else { bn++; bname[bn] = t; sec = bn; if (!(t in bidx)) bidx[t] = bn; active = (bidx[t] == bn); mk = ""
+    else { bn++; bname[bn] = t; sec = bn; if (!(t in bidx)) bidx[t] = bn; active = (bidx[t] == bn); mk = ""; inpara = 0
       if (active && (t in tidx)) {
         k = tolower(trim(substr(t, 4)))
         if (k == "why" || k == "changes" || k == "notes") kind[bn] = k
