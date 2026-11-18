@@ -149,3 +149,9 @@ return ErrUserAlreadyWithdrawn // a second withdraw would overwrite the withdraw
 - Tool comments stay: `//go:generate`, `//go:build`, `// Code generated … DO NOT EDIT.` A `//nolint` names its linter and gives the reason: `//nolint:gosec // fixed key, tests only`.
 - API documentation is not a comment: huma's `doc` tags and an operation's `Summary` are read by the API's users, so their language is chosen for those readers, by the project.
 - The examples in these rule files keep English comments, matching the rule text.
+- A comment block is at most 3 lines. A line holding only a delimiter (`/*`, `*/`) and a tool comment are not counted. Longer reasoning goes in the PR body or the commit message.
+- Comments are at most half of the lines a PR adds. The rule applies from 20 added lines, so a small PR that only documents existing code is not blocked.
+- A comment sits at the line it explains, above it or at its end.
+- A sentence has at most 25 words.
+
+Why: a reader of the next change reads these comments to learn what the code cannot say, so they are relevant, findable at the line, understandable in one pass and usable for the change (ISO 24495-1). The reader is the next developer to change the code.

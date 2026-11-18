@@ -94,6 +94,10 @@ MongoDB fields follow the same order; while both shapes exist, the server reads 
 - No index is the leading part of another, unique ones included: `(status, created_at)` already serves queries on `status` alone.
 - Each index carries a one-line comment naming the query that uses it, so it can be dropped when that query goes.
 
+## Comments
+
+A comment says why, never what, in English declarative sentences. A comment block is at most 3 lines, comments are at most half of the lines a PR adds (from 20 added lines), a comment sits at the line it explains, and a sentence has at most 25 words. Lines holding only a delimiter (`/*`, `*/`) and tool comments such as `-- +goose Up` are not counted. The one-line index comment above fits these limits. The reader is the next developer to change the schema; the limits follow ISO 24495-1's principles (relevant, findable, understandable, usable).
+
 ## List queries
 
 Every list's sort ends with the id: `ORDER BY created_at DESC, id DESC`. Rows that tie on the first key otherwise come back in a different order each time, and paging repeats or skips them. Cursors and page sizes are in `rules/api/contract.md`.
