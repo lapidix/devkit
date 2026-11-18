@@ -8,6 +8,10 @@ What changed for projects that use these rules and skills, newest first. Every c
 
 - `git/commit.md`: the first line, type included, is at most 72 characters; it used to be a 50-character summary, which did not say whether the type counted.
 
+### Added
+
+- Skill `refactoring-go-daemons`: carries out an `auditing-go-daemons` plan one step at a time. Each component gets a characterization test on the old code first, each commit is a move or a change but never both, a commit is `refactor` only when no assertion changed, and each step ends with `reviewing-go-daemon-changes` on its branch.
+
 ## 2026-10-28
 
 ### Changed
