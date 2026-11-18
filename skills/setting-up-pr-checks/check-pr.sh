@@ -24,14 +24,14 @@ root=$(git rev-parse --show-toplevel)
 git rev-parse --verify --quiet "$base^{commit}" >/dev/null || die "base $base not found"
 [ -z "$body" ] || [ -f "$body" ] || die "body file $body not found"
 
-defaults="PR_MAX_LINES=1000 PR_MAX_WHY_PARAGRAPHS=3 PR_MAX_WHY_CHARS=1500 PR_MAX_CHANGES_CHARS=3000
-PR_MAX_SCOPE_CHARS=1000 PR_MAX_NOTES_CHARS=1000 PR_MAX_SENTENCE_WORDS=25 PR_MAX_COMMENT_LINES=3
+defaults="PR_MAX_LINES=1000 PR_MAX_WHY_PARAGRAPHS=3 PR_MAX_WHY_CHARS=1500 PR_MAX_CHANGES_CHARS=3000 \
+PR_MAX_SCOPE_CHARS=1000 PR_MAX_NOTES_CHARS=1000 PR_MAX_SENTENCE_WORDS=25 PR_MAX_COMMENT_LINES=3 \
 PR_MAX_COMMENT_PERCENT=50 PR_MIN_LINES_FOR_RATIO=20"
 
 # Limits come from the defaults, then .github/pr-checks.env, then the environment; the file is
 # parsed, never sourced.
 load_config() {
-  local pair name env_value line n=0 file="$root/.github/pr-checks.env"
+  local pair name cfg env_value line n=0 file="$root/.github/pr-checks.env"
   for pair in $defaults; do
     printf -v "cfg_${pair%%=*}" '%s' "${pair#*=}"
   done
@@ -52,7 +52,8 @@ load_config() {
       [[ $env_value =~ ^[0-9]+$ ]] || die "$name must be a number"
       printf -v "cfg_$name" '%s' "$env_value"
     fi
-    eval "$name=\$cfg_$name"
+    cfg=cfg_$name
+    printf -v "$name" '%s' "${!cfg}"
   done
 }
 die_config() { echo ".github/pr-checks.env:$*" >&2; exit 2; }

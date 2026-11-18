@@ -58,7 +58,8 @@ compare() { # compare STREAM EXIT ARGS..., expected output on stdin
 expect() { compare out "$@"; }     # expect EXIT ARGS..., stdout on stdin
 expect_err() { compare err "$@"; } # expect_err EXIT ARGS..., stderr on stdin
 
-# cases
+# cases (called through "$case_name", which shellcheck cannot follow)
+# shellcheck disable=SC2317,SC2329
 
 case_usage_no_base()     { repo_init; expect_err 2 <<'E'
 usage: check-pr.sh --base <ref> [--body <file>] [--no-diff]
@@ -77,6 +78,7 @@ case_config_unknown()    { repo_init; printf '# limits\nPR_FOO=1\n' | put .githu
 .github/pr-checks.env:2: unknown setting PR_FOO
 E
 }
+case_config_line_start_keys() { repo_init; printf 'PR_MAX_SCOPE_CHARS=5\nPR_MAX_COMMENT_PERCENT=40\n' | put .github/pr-checks.env; commit c; expect 0 --base main </dev/null; }
 case_missing_body_file() { repo_init; expect_err 2 --base main --body /nonexistent <<'E'
 check-pr.sh: body file /nonexistent not found
 E
