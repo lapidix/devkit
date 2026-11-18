@@ -169,6 +169,67 @@ PR body: missing section "## Notes" (git/pull-request.md)
 E
 }
 
+rep() { local s; s=$(printf '%*s' "$2" ''); printf '%s' "${s// /$1}"; } # rep CHAR N
+
+# body_section NAME: good_body with the content of section NAME replaced by stdin
+body_section() {
+  local new
+  new=$(cat)
+  good_body | NEW="$new" awk -v h="## $1" '
+    $0 == h { print; print ENVIRON["NEW"]; print ""; skip = 1; next }
+    /^## / { skip = 0 }
+    !skip' | body_file body
+}
+words() { awk -v n="$1" 'BEGIN { for (i = 1; i <= n; i++) printf "%sw%d", (i > 1 ? " " : ""), i }'; } # words N: w1 w2 ... wN
+
+case_why_paragraphs()    { repo_init; printf 'one\n\ntwo\n\nthree\n\nfour\n' | { f=$(body_section Why); expect 1 --base main --no-diff --body "$f" <<'E'
+PR body: Why has 4 paragraphs, at most 3 (git/pull-request.md)
+E
+}; }
+case_why_chars()         { repo_init; f=$(rep a 1501 | body_section Why); expect 1 --base main --no-diff --body "$f" <<'E'
+PR body: Why has 1501 characters, at most 1500 (git/pull-request.md)
+E
+}
+case_changes_chars()     { repo_init; f=$(rep a 3001 | body_section Changes); expect 1 --base main --no-diff --body "$f" <<'E'
+PR body: Changes has 3001 characters, at most 3000 (git/pull-request.md)
+E
+}
+case_scope_chars()       { repo_init; f=$(rep a 1001 | body_section 'Out of scope & follow-ups'); expect 1 --base main --no-diff --body "$f" <<'E'
+PR body: Out of scope & follow-ups has 1001 characters, at most 1000 (git/pull-request.md)
+E
+}
+case_notes_chars()       { repo_init; f=$(rep a 1001 | body_section Notes); expect 1 --base main --no-diff --body "$f" <<'E'
+PR body: Notes has 1001 characters, at most 1000 (git/pull-request.md)
+E
+}
+case_verification_no_cap() { repo_init; f=$(printf '**Verified**\n- %s\n**Not verified**\n- None\n' "$(rep a 5000)" | body_section Verification)
+  expect 0 --base main --no-diff --body "$f" </dev/null
+}
+case_caps_multibyte()    { repo_init
+  f=$(rep 가 1500 | body_section Why); expect 0 --base main --no-diff --body "$f" </dev/null
+  f=$(rep 가 1501 | body_section Why); expect 1 --base main --no-diff --body "$f" <<'E'
+PR body: Why has 1501 characters, at most 1500 (git/pull-request.md)
+E
+}
+case_caps_from_config()  { repo_init; printf 'PR_MAX_WHY_PARAGRAPHS=1\n' | put .github/pr-checks.env; commit c
+  f=$(printf 'one\n\ntwo\n' | body_section Why); expect 1 --base main --no-diff --body "$f" <<'E'
+PR body: Why has 2 paragraphs, at most 1 (git/pull-request.md)
+E
+}
+case_caps_skip_absent_section() { repo_init; printf '## Summary\n%s\n' "$(rep a 5000)" | put .github/PULL_REQUEST_TEMPLATE.md; commit t
+  expect 0 --base main --no-diff --body "$(printf '## Summary\n%s\n' "$(rep a 5000)" | body_file body)" </dev/null
+}
+case_sentence_long()     { repo_init; f=$(printf '%s.\n' "$(words 26)" | body_section Why); expect 0 --base main --no-diff --body "$f" <<'E'
+warning: PR body: a sentence has 26 words, at most 25: "w1 w2 w3 w4 w5 w6 …" (git/pull-request.md)
+E
+}
+case_sentence_ok()       { repo_init; f=$(printf '%s `a b c d`.\n' "$(words 24)" | body_section Why); expect 0 --base main --no-diff --body "$f" </dev/null; }
+case_sentence_split()    { repo_init; f=$(printf '%s. %s.\n' "$(words 25)" "$(words 25)" | body_section Why); expect 0 --base main --no-diff --body "$f" </dev/null; }
+case_sentence_skips_code() { repo_init; f=$(printf '```\n%s.\n```\n> %s.\n| %s |\n' "$(words 30)" "$(words 30)" "$(words 30)" | body_section Why)
+  expect 0 --base main --no-diff --body "$f" </dev/null
+}
+case_sentence_list_items() { repo_init; f=$(printf -- '- %s.\n- %s.\n' "$(words 20)" "$(words 20)" | body_section Changes); expect 0 --base main --no-diff --body "$f" </dev/null; }
+
 # runner
 
 mkdir -p "$build"

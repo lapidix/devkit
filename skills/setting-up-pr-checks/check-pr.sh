@@ -82,18 +82,45 @@ Resolves #N
 TEMPLATE
 }
 
-body_awk() { # body_awk TEMPLATE BODY: prints the violations of B1 to B3
-  LC_ALL=C awk -v rule="git/pull-request.md" '
+body_awk() { # body_awk TEMPLATE BODY: prints the violations of B1 to B4 and the warnings of B6
+  LC_ALL=C awk -v rule="git/pull-request.md" -v max_paras="$PR_MAX_WHY_PARAGRAPHS" \
+    -v max_why="$PR_MAX_WHY_CHARS" -v max_changes="$PR_MAX_CHANGES_CHARS" \
+    -v max_scope="$PR_MAX_SCOPE_CHARS" -v max_notes="$PR_MAX_NOTES_CHARS" \
+    -v max_words="$PR_MAX_SENTENCE_WORDS" '
 function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
 function nonempty(s) { s = trim(s); sub(/^([-*+]|[0-9]+\.)([ \t]+|$)/, "", s); return trim(s) != "" }
 function item(s) { s = trim(s); return s ~ /^[-*+]([ \t]|$)/ }
+# A prose chunk (a paragraph or one list item) ends here: split it into sentences and warn on long ones.
+# A backtick span counts as one word, so its spaces are hidden while the chunk is split.
+function flush(   s, out, n, w, i, k, st, q) {
+  if (chunk == "") return
+  s = chunk; chunk = ""; out = ""
+  while (match(s, /`[^`]*`/)) {
+    q = substr(s, RSTART, RLENGTH); gsub(/[ \t]/, "\001", q)
+    out = out substr(s, 1, RSTART - 1) q
+    s = substr(s, RSTART + RLENGTH)
+  }
+  n = split(out s, w, /[ \t]+/)
+  st = 1
+  for (i = 1; i <= n; i++) {
+    if (w[i] !~ /[.?!]$/ && i != n) continue
+    if (i - st + 1 > max_words + 0) {
+      q = ""
+      for (k = st; k < st + 6; k++) q = q (k > st ? " " : "") w[k]
+      gsub(/\001/, " ", q)
+      warn[++nw] = "warning: PR body: a sentence has " (i - st + 1) " words, at most " max_words ": \"" q " …\" (" rule ")"
+    }
+    st = i + 1
+  }
+}
 FILENAME != cur_file { cur_file = FILENAME; fence = 0; inc = 0; phase = (FILENAME == ARGV[1]) ? 1 : 2; sec = 0 }
 {
   gsub(/\r/, "")
   line = $0
   t = trim(line)
-  if (t ~ /^(```|~~~)/) { fence = !fence; text = line }
-  else if (fence) text = line
+  fl = 0
+  if (t ~ /^(```|~~~)/) { fence = !fence; text = line; fl = 1 }
+  else if (fence) { text = line; fl = 1 }
   else {
     text = ""
     while (1) {
@@ -111,8 +138,15 @@ FILENAME != cur_file { cur_file = FILENAME; fence = 0; inc = 0; phase = (FILENAM
   }
   t = trim(text)
   if (!fence && text ~ /^## /) {
+    if (phase == 2) flush()
     if (phase == 1) { tn++; tname[tn] = t; tidx[t] = tn }
-    else { bn++; bname[bn] = t; sec = bn; if (!(t in bidx)) bidx[t] = bn; active = (bidx[t] == bn); mk = "" }
+    else { bn++; bname[bn] = t; sec = bn; if (!(t in bidx)) bidx[t] = bn; active = (bidx[t] == bn); mk = ""
+      if (active && (t in tidx)) {
+        k = tolower(trim(substr(t, 4)))
+        if (k == "why" || k == "changes" || k == "notes") kind[bn] = k
+        else if (k ~ /^out of scope/) kind[bn] = "scope"
+      }
+    }
     next
   }
   if (phase == 1) {
@@ -120,9 +154,20 @@ FILENAME != cur_file { cur_file = FILENAME; fence = 0; inc = 0; phase = (FILENAM
     if (t == "**Not verified**") nsec = tn
   } else if (sec && active) {
     if (nonempty(text)) has[sec] = 1
+    c = t; gsub(/[\200-\277]/, "", c); chars[sec] += length(c)
+    if (t == "") inpara = 0
+    else if (!inpara) { inpara = 1; paras[sec]++ }
     if (t == "**Verified**") mk = "V"
     else if (t == "**Not verified**") mk = "N"
     else if (mk != "" && item(t)) { sub(/^[-*+]/, "", t); if (trim(t) != "") cnt[mk]++ }
+  }
+  if (phase == 2) {
+    t = trim(text)
+    if (fl || t == "" || t ~ /^#/ || t ~ /^\|/ || t ~ /^>/) flush()
+    else {
+      if (t ~ /^([-*+]|[0-9]+\.)([ \t]+|$)/) { flush(); sub(/^([-*+]|[0-9]+\.)[ \t]*/, "", t) }
+      chunk = (chunk == "" ? "" : chunk " ") t
+    }
   }
 }
 END {
@@ -143,11 +188,23 @@ END {
     if (cnt["V"] < 1) print "PR body: Verification needs a **Verified** list with at least one item; write - None when there are none (" rule ")"
     if (cnt["N"] < 1) print "PR body: Verification needs a **Not verified** list with at least one item; write - None when there are none (" rule ")"
   }
+  flush()
+  for (p = 1; p <= bn; p++) {
+    k = kind[p]
+    if (k == "") continue
+    lim = (k == "why") ? max_why : (k == "changes") ? max_changes : (k == "scope") ? max_scope : max_notes
+    if (k == "why" && paras[p] > max_paras + 0)
+      print "PR body: " substr(bname[p], 4) " has " paras[p] " paragraphs, at most " max_paras " (" rule ")"
+    if (chars[p] > lim + 0)
+      print "PR body: " substr(bname[p], 4) " has " chars[p] " characters, at most " lim " (" rule ")"
+  }
+  for (i = 1; i <= nw; i++) print warn[i]
 }
 ' "$@"
 }
 
-# B1 to B3: the template's sections, in order, each with content; Verification lists.
+# B1 to B4 and B6: the template's sections, in order, each with content; Verification lists;
+# section caps; long sentences (warnings).
 check_body() {
   local tpl="" f out
   for f in .github/PULL_REQUEST_TEMPLATE.md .github/pull_request_template.md \
@@ -159,7 +216,10 @@ check_body() {
   else
     out=$(body_awk <(default_template) "$body")
   fi
-  [ -z "$out" ] || { printf '%s\n' "$out"; failed=1; }
+  [ -z "$out" ] && return 0
+  printf '%s\n' "$out"
+  # warnings alone leave the exit code at 0
+  if printf '%s\n' "$out" | grep -qv '^warning: '; then failed=1; fi
 }
 
 
