@@ -368,9 +368,146 @@ check_size() {
   fi
 }
 
+# comments_awk: reads the hunks of `git diff -U0` (first file), then the file as of HEAD (second).
+# Prints D2 violations and D4 warnings, then `counts <added comment lines> <added code lines>`.
+# A block is a run of comment lines; a blank, code or tool-comment line ends it, a delimiter line
+# (/*, /**, */, **/ alone) neither counts nor ends it.
+comments_awk() { # comments_awk PATH RULE LANG(go|ts|sql) DIFF FILE
+  LC_ALL=C awk -v path="$1" -v rule="$2" -v lang="$3" -v max_lines="$PR_MAX_COMMENT_LINES" \
+    -v max_words="$PR_MAX_SENTENCE_WORDS" '
+function trim(s) { gsub(/^[ \t\r]+|[ \t\r]+$/, "", s); return s }
+function istool(t) {
+  return t ~ /^\/\/go:/ || t ~ /^\/\/nolint/ || t ~ /^\/\/ ?Code generated/ || t ~ /^-- [+]goose/ ||
+    t ~ /eslint-(disable|enable)/ || t ~ /@ts-(expect-error|ignore|nocheck)/ || t ~ /^\/\/\/ <reference/ ||
+    t ~ /SPDX-License-Identifier/ || t ~ /biome-ignore/ || t ~ /prettier-ignore/ || t ~ /(v8|c8|istanbul) ignore/
+}
+# an odd number of quote characters before a position means it sits inside a string
+function instring(p,   q) {
+  q = sprintf("%c", 39)
+  return (split(p, tmp, "\"") - 1) % 2 || (split(p, tmp, q) - 1) % 2 || (split(p, tmp, "`") - 1) % 2
+}
+# the first sentence of the block text over the limit, as its word count; 0 when none
+function longest(s,   out, n, w, i, st, q) {
+  out = ""
+  while (match(s, /`[^`]*`/)) {
+    q = substr(s, RSTART, RLENGTH); gsub(/[ \t]/, "\001", q)
+    out = out substr(s, 1, RSTART - 1) q
+    s = substr(s, RSTART + RLENGTH)
+  }
+  n = split(out s, w, /[ \t]+/)
+  st = 1
+  for (i = 1; i <= n; i++) {
+    if (w[i] !~ /[.?!]$/ && i != n) continue
+    if (i - st + 1 > max_words + 0) return i - st + 1
+    st = i + 1
+  }
+  return 0
+}
+function endblock(   w) {
+  if (!bopen) return
+  bopen = 0
+  if (!badd) return
+  if (bcnt > max_lines + 0) print path ":" bstart ": comment block of " bcnt " lines, at most " max_lines " (" rule ")"
+  w = longest(btext)
+  if (w) print "warning: " path ":" bstart ": a comment sentence has " w " words, at most " max_words " (" rule ")"
+}
+FILENAME != cur { cur = FILENAME; phase = (FILENAME == ARGV[1]) ? 1 : 2 }
+phase == 1 {
+  if ($0 !~ /^@@ / || !match($0, /[+][0-9]+(,[0-9]+)?/)) next
+  split(substr($0, RSTART + 1, RLENGTH - 1), h, ",")
+  c = h[1] + 0; d = (h[2] == "") ? 1 : h[2] + 0
+  for (i = 0; i < d; i++) added[c + i] = 1
+  next
+}
+{
+  t = trim($0)
+  kind = "X"
+  if (t == "") kind = "B"
+  else if (inblk) {
+    kind = "C"
+    if (index(t, "*/")) inblk = 0
+  } else if (t ~ /^\/\*/) {
+    kind = "C"
+    if (!index(substr(t, 3), "*/")) inblk = 1
+  } else if ((lang == "sql" && t ~ /^--/) || (lang != "sql" && t ~ /^\/\//)) kind = "C"
+  else {
+    p = index(t, "/*")
+    if (p && !instring(substr(t, 1, p - 1)) && !index(substr(t, p + 2), "*/")) inblk = 1
+  }
+  if (kind == "C" && (t == "/*" || t == "/**" || t == "*/" || t == "**/")) kind = "D"
+  else if (kind == "C" && istool(t)) kind = "T"
+  isadd = (FNR in added)
+  if (kind == "C" || kind == "D") {
+    if (!bopen) { bopen = 1; bstart = FNR; bcnt = 0; badd = 0; btext = "" }
+    if (isadd) badd = 1
+    if (kind == "C") {
+      bcnt++
+      if (isadd) ncomment++
+      s = t
+      sub(/^\/\*+/, "", s); sub(/\*+\/$/, "", s); sub(/^(\/\/+|--+|\*+)/, "", s)
+      s = trim(s)
+      if (s != "") btext = btext (btext == "" ? "" : " ") s
+    }
+  } else {
+    endblock()
+    if (kind == "X" && isadd) ncode++
+  }
+}
+END { endblock(); print "counts " ncomment + 0 " " ncode + 0 }
+' "$4" "$5"
+}
+
+# Totals for the ratio check: added comment and code lines, and which areas had a checked file.
+comment_total=0
+code_total=0
+seen_go=0
+seen_typescript=0
+seen_database=0
+comment_warnings=""
+
+# D2 (blocking) and D4 (warnings, kept in comment_warnings): comment blocks of added or changed
+# lines in Go, TypeScript/JavaScript and SQL files, outside generated files.
+# shellcheck disable=SC2034 # the seen_* flags are read by the ratio check (D3)
+check_comments() {
+  local status path old rule lang out line d2=""
+  while IFS= read -r -d '' status; do
+    IFS= read -r -d '' path
+    old=$path
+    case $status in R*) IFS= read -r -d '' path ;; esac
+    case $path in
+      *.go) rule=go/conventions.md; lang=go ;;
+      *.ts | *.tsx | *.js | *.jsx | *.mjs | *.cjs) rule=typescript/conventions.md; lang=ts ;;
+      *.sql) rule=database/conventions.md; lang=sql ;;
+      *) continue ;;
+    esac
+    ! is_generated "$path" || continue
+    out=$(comments_awk "$path" "$rule" "$lang" \
+      <(git -C "$root" diff -U0 -M --no-ext-diff --no-color "$base"...HEAD -- ":(literal)$old" ":(literal)$path") \
+      <(git -C "$root" show "HEAD:$path"))
+    case $lang in go) seen_go=1 ;; ts) seen_typescript=1 ;; sql) seen_database=1 ;; esac
+    while IFS= read -r line; do
+      case $line in
+        "counts "*)
+          line=${line#counts }
+          comment_total=$((comment_total + ${line% *}))
+          code_total=$((code_total + ${line#* }))
+          ;;
+        "warning: "*) comment_warnings="$comment_warnings${comment_warnings:+$'\n'}$line" ;;
+        *) d2="$d2${d2:+$'\n'}$line" ;;
+      esac
+    done <<<"$out"
+  done < <(git -C "$root" diff --name-status -z -M --diff-filter=AMR "$base"...HEAD)
+  if [ -n "$d2" ]; then
+    printf '%s\n' "$d2"
+    failed=1
+  fi
+}
+
 # D1 to D4: size, comment blocks, comment share, restating comments.
 check_diff() {
   check_size
+  check_comments
+  [ -z "$comment_warnings" ] || printf '%s\n' "$comment_warnings"
 }
 
 load_config

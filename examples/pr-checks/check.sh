@@ -337,6 +337,80 @@ $(size_warning 11 10)
 E
 }
 
+block_base() { repo_init; git -C "$build/repo" checkout -q main; } # block_base: work on main, then block_branch
+block_branch() { git -C "$build/repo" checkout -q -B pr; }
+
+case_block_new()         { repo_init; printf 'package a\n\n// one\n// two\n// three\n// four\n' | put a.go; commit b
+  expect 1 --base main <<'E'
+a.go:3: comment block of 4 lines, at most 3 (go/conventions.md)
+E
+}
+case_block_grown()       { block_base; printf 'package a\n\n// one\n// two\n// three\n' | put a.go; commit b; block_branch
+  printf 'package a\n\n// one\n// two\n// three\n// four\n' | put a.go; commit g
+  expect 1 --base main <<'E'
+a.go:3: comment block of 4 lines, at most 3 (go/conventions.md)
+E
+}
+case_block_untouched()   { block_base; printf 'package a\n\n// one\n// two\n// three\n// four\n// five\n\nvar x = 1\n' | put a.go; commit b; block_branch
+  printf 'package a\n\n// one\n// two\n// three\n// four\n// five\n\nvar x = 2\n' | put a.go; commit g
+  expect 0 --base main </dev/null
+}
+case_block_jsdoc()       { repo_init; printf '/**\n * one\n * two\n * three\n */\nexport const x = 1\n' | put x.ts; commit b
+  expect 0 --base main </dev/null
+  printf '/**\n * one\n * two\n * three\n * four\n */\nexport const x = 1\n' | put x.ts; commit c
+  expect 1 --base main <<'E'
+x.ts:1: comment block of 4 lines, at most 3 (typescript/conventions.md)
+E
+}
+case_block_tool_split()  { repo_init; printf 'package a\n\n// a\n// b\n//go:generate x\n// c\n// d\n' | put a.go; commit b
+  expect 0 --base main </dev/null
+}
+case_block_trailing()    { repo_init; printf 'package a\n\nvar a = 1 // why\nvar b = 2 // why\nvar c = 3 // why\nvar d = 4 // why\n' | put a.go; commit b
+  expect 0 --base main </dev/null
+}
+case_block_sql()         { repo_init; printf -- '-- one\n-- two\n-- three\n-- four\nSELECT 1;\n' | put m.sql; commit b
+  expect 1 --base main <<'E'
+m.sql:1: comment block of 4 lines, at most 3 (database/conventions.md)
+E
+}
+case_block_other_ext()   { repo_init; printf '# 1\n# 2\n# 3\n# 4\n' | put a.py; printf '# 1\n# 2\n# 3\n# 4\n' | put a.sh
+  printf '# 1\n# 2\n# 3\n# 4\n' | put a.yml; commit b
+  expect 0 --base main </dev/null
+}
+case_block_renamed_file() { block_base
+  printf 'package a\n\n// o1\n// o2\n// o3\n// o4\n// o5\nfunc f() int {\n\treturn 1\n}\n\nfunc g() int {\n\treturn 2\n}\n' | put a.go; commit b; block_branch
+  git -C "$build/repo" mv a.go b.go
+  printf '\n// n1\n// n2\n// n3\n// n4\n' >>"$build/repo/b.go"; commit mv
+  expect 1 --base main <<'E'
+b.go:16: comment block of 4 lines, at most 3 (go/conventions.md)
+E
+}
+case_block_from_config() { block_base; printf 'PR_MAX_COMMENT_LINES=1\n' | put .github/pr-checks.env; commit c; block_branch
+  printf 'package a\n\n// one\n// two\n' | put a.go; commit b
+  expect 1 --base main <<'E'
+a.go:3: comment block of 2 lines, at most 1 (go/conventions.md)
+E
+}
+case_block_glob_in_code() { repo_init; printf 'export const g = "src/**/*.ts"\nexport const n = 1\n// a\n// b\n// c\n// d\n' | put x.ts; commit b
+  expect 1 --base main <<'E'
+x.ts:3: comment block of 4 lines, at most 3 (typescript/conventions.md)
+E
+}
+case_comment_sentence()  { repo_init; printf 'package a\n\n// %s\n' "$(awk 'BEGIN { for (i = 1; i <= 26; i++) printf "w%d ", i }' | sed 's/ $/./')" | put a.go; commit b
+  expect 0 --base main <<'E'
+warning: a.go:3: a comment sentence has 26 words, at most 25 (go/conventions.md)
+E
+}
+case_comment_sentence_ok() { repo_init; printf 'package a\n\n// %s\n' "$(awk 'BEGIN { for (i = 1; i <= 25; i++) printf "w%d ", i }' | sed 's/ $/./')" | put a.go; commit b
+  expect 0 --base main </dev/null
+}
+case_comment_sentence_joined() { repo_init; printf 'package a\n\n// %s\n// %s\n' "$(awk 'BEGIN { for (i = 1; i <= 13; i++) printf "w%d ", i }' | sed 's/ $//')" \
+  "$(awk 'BEGIN { for (i = 14; i <= 26; i++) printf "w%d ", i }' | sed 's/ $/./')" | put a.go; commit b
+  expect 0 --base main <<'E'
+warning: a.go:3: a comment sentence has 26 words, at most 25 (go/conventions.md)
+E
+}
+
 # runner
 
 mkdir -p "$build"
