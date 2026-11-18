@@ -4,6 +4,7 @@ paths:
   - "**/migrations/**"
   - "**/adapters/out/persistence/**"
   - "**/infrastructure/database/**"
+  - "**/*.sql"
 ---
 
 # Database conventions
@@ -93,6 +94,10 @@ MongoDB fields follow the same order; while both shapes exist, the server reads 
 - In a compound index, equality fields come first, then the sort field, then range fields. `WHERE status = 'active' ORDER BY created_at DESC` gets `(status, created_at)`.
 - No index is the leading part of another, unique ones included: `(status, created_at)` already serves queries on `status` alone.
 - Each index carries a one-line comment naming the query that uses it, so it can be dropped when that query goes.
+
+## Comments
+
+A comment says why, never what, in English declarative sentences. A comment block is at most 3 lines, a comment sits at the line it explains, and a sentence has at most 25 words. Comments are at most half of the code lines a PR adds in Go, TypeScript/JavaScript and SQL files. Blank lines, delimiter-only lines (`/*`, `*/`) and tool comments are not counted, and generated files are left out. The rule applies once comment and code lines together reach 20. Tool comments are goose's `-- +goose Up`, sqlc's `-- name: GetUser :one` and drizzle's `--> statement-breakpoint`. The one-line index comment above fits these limits. The reader is the next developer to change the schema; the limits follow ISO 24495-1's principles (relevant, findable, understandable, usable).
 
 ## List queries
 

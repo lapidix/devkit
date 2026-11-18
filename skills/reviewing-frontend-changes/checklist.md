@@ -7,7 +7,7 @@ Apply the sections whose rule files cover the file under review. Each item names
 - File names are `{subject}.{role}.ts`, except components (`UserCard.tsx`), hooks (`useUserFilter.ts`) and single-function shared helpers (`create-store.ts`).
 - Exported names: `as const` objects in `SCREAMING_SNAKE`; instances and namespaces in `PascalCase`; action names verb first (`CreateUserCommand`); `create` only on functions that build a new object; names shared between test files carry `Test`.
 - Contracts a function or component receives (props, commands, queries) are `interface`; data shapes are `type`.
-- Comments say why, in English; none restate what the code does.
+- Comments say why, in English; none restate what the code does; a comment block is at most three lines, comments are at most half of the added code lines, and each sits at the line it explains (`rules/typescript/conventions.md`).
 
 ## Layers and slices
 

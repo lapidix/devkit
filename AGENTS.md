@@ -8,14 +8,15 @@ lapidix devkit is rules and skills for coding agents, not an application. `rules
 bash scripts/check-catalog.sh        # every rule and skill is listed in README.md and the catalog skill
 claude plugin validate . --strict    # the marketplace manifest
 claude plugin validate ./skills      # every skill's frontmatter
-shellcheck scripts/*.sh examples/*.sh examples/*/check.sh
+shellcheck scripts/*.sh skills/*/*.sh examples/*.sh examples/*/check.sh
 bash examples/frontend/check.sh      # the entity slice example: tsc, Vitest, dependency-cruiser
 bash examples/nestjs/check.sh        # the NestJS module example: prisma generate, tsc, Vitest, dependency-cruiser
 bash examples/go/check.sh            # the Go module example: sqlc, build, vet, golangci-lint, tests, govulncheck
 bash examples/go-daemon/check.sh     # the example daemon: buf, golangci-lint for Linux, tests, release, buf breaking, govulncheck
+bash examples/pr-checks/check.sh     # check-pr.sh against fixture repositories: PR body, size and comment checks
 ```
 
-CI runs the first four on every pull request, with a whitespace check on the diff (`.github/workflows/ci.yml`), and the four examples (`.github/workflows/examples.yml`). The Go example's database tests need `TEST_DATABASE_URL` pointing at a PostgreSQL 17 database; without it they skip, except under `CI=true`, where they fail.
+CI runs the first four on every pull request, with a whitespace check on the diff (`.github/workflows/ci.yml`), and the examples (`.github/workflows/examples.yml`). The Go example's database tests need `TEST_DATABASE_URL` pointing at a PostgreSQL 17 database; without it they skip, except under `CI=true`, where they fail.
 
 ## Layout
 

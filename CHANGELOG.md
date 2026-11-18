@@ -4,13 +4,21 @@ What changed for projects that use these rules and skills, newest first. Every c
 
 ## 2026-11-18
 
+### Added
+
+- Skill `setting-up-pr-checks` with `check-pr.sh`: a GitHub Actions job runs the script on every pull request. It checks the PR body against the template, the size, and the comments that added lines carry in Go, TypeScript/JavaScript and SQL files. Missing, empty or out-of-order sections, a Verified or Not verified list that is missing or outside Verification, a section over its limit, a backtick reference that does not exist, a comment block over 3 lines and comments over half of the added code lines block the merge (exit 1). A PR over 1,000 changed lines and a sentence over 25 words, in the body or in a comment, only warn (exit 0). A base with no merge base, as in a shallow clone, exits 2. Generated files are left out: lockfiles, Go files with the `// Code generated … DO NOT EDIT.` header, and files marked `linguist-generated` in `.gitattributes`. Tool comments are not counted as comments and do not end a comment block: Go directives, `//nolint`, staticcheck's `//lint:ignore`, `-- +goose`, sqlc's `-- name:`, drizzle's `--> statement-breakpoint`, swaggo's `// @Summary`, linter and coverage switches, test environment and JSX pragmas. A line inside a Go raw string or a template literal is code. `.github/pr-checks.env` changes the numbers. A project adopts the check by running `setting-up-pr-checks`, then marks the `pr-checks` job as required in branch protection.
+- Skill `refactoring-go-daemons`: carries out an `auditing-go-daemons` plan one step at a time. Each component gets a characterization test on the old code first, each commit is a move or a change but never both, a commit is `refactor` only when no assertion changed, and each step ends with `reviewing-go-daemon-changes` on its branch.
+
 ### Changed
 
 - `git/commit.md`: the first line, type included, is at most 72 characters; it used to be a 50-character summary, which did not say whether the type counted.
-
-### Added
-
-- Skill `refactoring-go-daemons`: carries out an `auditing-go-daemons` plan one step at a time. Each component gets a characterization test on the old code first, each commit is a move or a change but never both, a commit is `refactor` only when no assertion changed, and each step ends with `reviewing-go-daemon-changes` on its branch.
+- `git/pull-request.md`, section limits: Why is at most 3 paragraphs and 1,500 characters, Changes 3,000, Out of scope & follow-ups and Notes 1,000 each. A section with nothing to say contains `None`; an empty section used to be allowed and now fails the check.
+- `git/pull-request.md`, references: a path that contains a `/`, a file name without one (looked up anywhere in the repository), or a plain name, in backticks exists in the repository, at the PR head or its base, and a line number after a path or a file name is within the file. A `.js` name or a dotfile without a `/`, such as `decimal.js` or `.gitattributes`, is not checked, nor are commands, globs, placeholders, dotted names such as `os.Getenv`, names with no lowercase letter such as `NODE_ENV`, host-like paths and ignored paths.
+- `git/pull-request.md`, size and sentences: a PR changes at most 1,000 lines, and a larger one says in Notes why it could not be split; a sentence has at most 25 words, from the plain language principles of ISO 24495-1. The check only warns on both and exits 0.
+- `go/conventions.md`, `typescript/conventions.md`, `database/conventions.md`: a comment block is at most 3 lines, a comment sits at the line it explains, and a sentence has at most 25 words. Comments are at most half of the code lines a PR adds in Go, TypeScript/JavaScript and SQL files, once comment and code lines together reach 20; blank lines, delimiter-only lines, tool comments and generated files are not counted. Each rule names its language's tool comments, and a tool comment does not end a block. `typescript/conventions.md` now loads for `.mts`, `.cts` and JavaScript files too, and `database/conventions.md` for every `.sql` file, the files the check reads. Longer reasoning goes in the PR body or the commit message. Code that carried longer comments gets them cut or moved. The check warns on long sentences and blocks on the rest.
+- `writing-pull-requests`: a new Check step fetches the base and runs `check-pr.sh` on the body file against `origin/<base>` before the PR is created. A section with nothing to say gets `None` where the skill used to accept "deliberately left empty".
+- `reviewing-frontend-changes`, `reviewing-go-changes`, `reviewing-go-daemon-changes` and `reviewing-server-changes` fetch the base and run `scripts/check-pr.sh --base "$BASE"` when the project has it, and record its output. Without it they skip the script, and the checklist's comment items follow the project's own `conventions.md`, which may predate the limits.
+- `installing-rules`: a project that enforces the PR check in CI gets `git/pull-request.md` from `setting-up-pr-checks`, not from the `git` area, which stays personal.
 
 ## 2026-10-28
 
