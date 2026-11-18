@@ -27,7 +27,7 @@ The rule files named here are in the project's `.claude/rules/{area}/` (`rules/f
    - `make generate` then `git diff --exit-code`, and `go mod tidy` then `git diff --exit-code` (and the same in `tools/`). Run them on a clean tree and restore it afterwards (`git checkout -- .`).
    - When `PROTO_FILES` is not empty: `go tool -modfile=tools/go.mod buf breaking --against ".git#branch=$BASE"`. A breaking change in a minor release is a finding (`rules/go-daemon/contract.md`).
    - `make vuln`.
-   - When the project has `scripts/check-pr.sh`, run `bash scripts/check-pr.sh --base <base>` (diff checks only) and record its output.
+   - When the project has `scripts/check-pr.sh`, run `git fetch origin <base>`, then `bash scripts/check-pr.sh --base "$BASE"` from the repository root (diff checks only), and record its output.
 
 3. **Grep checks.** Run every command below. Read each hit: comments, strings and legitimate exceptions can match.
 

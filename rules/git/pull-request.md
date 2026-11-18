@@ -55,14 +55,14 @@ Resolves #N
 | Notes | At most 1,000 characters. Merge or deploy order, risks, where reviewers should look first |
 
 - A section with nothing to say contains `None`. An empty section reads as forgotten.
-- A path or a name in backticks exists in the repository, at the PR head or its base: `src/user/withdraw.ts`, `WithdrawUser`. A name that does not exist is a guess, and a reviewer who searches for it loses time. Not checked: commands, globs, placeholders, dotted names such as `os.Getenv`, names with no lowercase letter such as `NODE_ENV`, host-like paths, product names such as `Next.js`, and paths the repository ignores.
+- A path or a name in backticks exists in the repository, at the PR head or its base: `src/user/withdraw.ts`, `WithdrawUser`. A name that does not exist is a guess, and a reviewer who searches for it loses time. The check looks up paths that contain a `/` and plain names in camelCase, PascalCase or snake_case. A line number after a path (`src/app/page.tsx:150`) is within the file. Bare file names such as `README.md` or `decimal.js` are not checked, because they may name a package or a file elsewhere. Neither are commands, globs, placeholders, dotted names such as `os.Getenv`, names with no lowercase letter such as `NODE_ENV`, host-like paths, or paths the repository ignores.
 - A warning that must be read before merging gets its own section right after Issue: `## ⚠️ Merge #41 first`.
 - A stacked PR says so in a blockquote under Issue: `> Stacked on \`issue/40-…\` (#43). Once #43 merges, the base changes to \`main\`.`
 - The body ends with your own content. Leave out `🤖 Generated with …` and any other AI-attribution footer.
 
 ## Size
 
-A PR changes at most 1,000 lines, counting added and deleted lines and leaving out generated files: lockfiles (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lock`, `go.sum`) and files marked `linguist-generated` in `.gitattributes`. A PR over the limit says in Notes why it could not be split. The check warns on size and does not block the merge.
+A PR changes at most 1,000 lines, counting added and deleted lines and leaving out generated files: lockfiles (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lock`, `go.sum`), Go files with the `// Code generated … DO NOT EDIT.` header in their first 10 lines, and files marked `linguist-generated` in `.gitattributes`. A PR over the limit says in Notes why it could not be split. The check warns on size and does not block the merge.
 
 Why: a reviewer's attention drops as the diff grows, so large changes get skimmed instead of read.
 

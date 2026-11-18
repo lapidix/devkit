@@ -22,14 +22,14 @@ The rule files named here are in the project's `.claude/rules/{area}/`. When the
 2. **Install.**
    - Copy `check-pr.sh` to `scripts/check-pr.sh`.
    - A project without `.github/PULL_REQUEST_TEMPLATE.md` gets one from the template in `rules/git/pull-request.md` (`## Body`). Without a template GitHub opens PRs with an empty body, and the author has no list of the headers the check requires.
-   - Copy the rule the check cites: `bash scripts/copy-rules.sh <project> git/pull-request`, adding `--agents-md` when step 1 found it in use. Only this file: the check is a team rule once CI enforces it, so teammates and their agents must be able to read what it requires, and the violation messages name this file. `git/commit.md` stays a personal format and is not copied. Find `copy-rules.sh` in the project's `scripts/`, else two levels above this folder.
+   - Copy the rule the check cites: `bash scripts/copy-rules.sh <project> git/pull-request`. When step 1 found `--agents-md` in use, the flag goes before `<project>`: `bash scripts/copy-rules.sh --agents-md <project> git/pull-request`. Only this file: the check is a team rule once CI enforces it, so teammates and their agents must be able to read what it requires, and the violation messages name this file. `git/commit.md` stays a personal format and is not copied. Find `copy-rules.sh` in the project's `scripts/`, else two levels above this folder.
    - Create `.github/pr-checks.env` only when step 1 found other limits: one `PR_NAME=number` per line, names as in the header of `check-pr.sh`. The file is parsed, never sourced, and an unknown name exits 2.
 
    Done when `scripts/check-pr.sh` exists, `.claude/rules/git/pull-request.md` exists, the template exists, and `.github/pr-checks.env` exists only if the limits differ.
 
-3. **Generated files.** Add each path from step 1 to `.gitattributes` with `linguist-generated=true`, for example `internal/db/sqlc/** linguist-generated=true`. The size check skips these files and the lockfiles (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lock`, `go.sum`); a path missing here counts toward the 1,000 lines.
+3. **Generated files.** Add each path from step 1 to `.gitattributes` with `linguist-generated=true`, for example `**/sqlcgen/** linguist-generated=true` for sqlc's output under `internal/modules/<module>/adapters/out/persistence/sqlcgen/`. The size and comment checks skip these files and the lockfiles (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lock`, `go.sum`). A Go file whose first 10 lines hold the `// Code generated … DO NOT EDIT.` header needs no entry: the checks skip it already. A path missing here counts toward the 1,000 lines, and its comments are checked.
 
-   Done when `git check-attr linguist-generated <path>` prints `set` for a file under each generated path.
+   Done when `git check-attr linguist-generated <path>` prints `<path>: linguist-generated: true` (or `set`, for an entry without `=true`) for a file under each generated path that lacks the Go header.
 
 4. **CI.** Create `.github/workflows/pr-checks.yml`. It follows `rules/monorepo/ci.md`: actions pinned to a SHA, `contents: read` only, untrusted values through `env`, and no path filter, because the job becomes a required check and a workflow skipped by a path filter never reports.
    ```yaml
@@ -70,7 +70,7 @@ The rule files named here are in the project's `.claude/rules/{area}/`. When the
    ```
    - `edited` re-runs the check when only the body changes; the default events omit it.
    - A PR opened by a bot (Dependabot, Renovate, a release bot) has no template headers in its body, so the bot branch runs the diff checks only. It is the same job with fewer arguments, so size and comment limits still apply to bot PRs.
-   - `fetch-depth: 0` gives the script `origin/$BASE_REF` and the history to diff against.
+   - `fetch-depth: 0` gives the script `origin/$BASE_REF` and the history to diff against. A shallow clone has no merge base, and the script exits 2.
 
    Done when the file exists with the first line above, and a pull request shows the `pr-checks` job.
 
@@ -92,7 +92,7 @@ The rule files named here are in the project's `.claude/rules/{area}/`. When the
 | `types` leaves out `edited` | Editing the body then never re-runs the check; keep all four types |
 | The body interpolated into `run:` (`echo "${{ github.event.pull_request.body }}"`) | A body containing `"; curl …` runs as shell. Pass it through `env` and write it with `printf '%s\n' "$BODY"` (`rules/monorepo/ci.md`) |
 | A `paths:` or `paths-ignore:` filter on the workflow | A skipped workflow never reports, and a required check waits forever |
-| A generated path missing from `.gitattributes` | The size check counts the generated lines, and a regenerated client fails a PR that changed ten lines by hand |
+| A generated path missing from `.gitattributes` | The size check counts the generated lines and warns, and the comment checks read the generated comments: a regenerated client fails a PR that changed ten lines by hand |
 | A PR edits `.github/pr-checks.env` or `scripts/check-pr.sh` to lower a limit | The check runs the PR's own copy; review changes to these two files in the diff, and name them in CODEOWNERS when the team wants an owner |
 | Bot PRs skipped with a job-level `if` | The job then never reports on those PRs and the required check waits; keep one job and drop only `--body` |
 | `rules/git/commit.md` copied along with the PR rule | The commit format is personal; only `git/pull-request` goes into the project |

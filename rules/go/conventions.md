@@ -146,11 +146,11 @@ return ErrUserAlreadyWithdrawn // a second withdraw would overwrite the withdraw
 ```
 
 - Exported identifiers need no doc comment. The godoc convention serves libraries that others import; in a server it mostly restates the name, so revive's comment rules are off. A doc comment that is written follows the rule above.
-- Tool comments stay: `//go:generate`, `//go:build`, `// Code generated … DO NOT EDIT.` A `//nolint` names its linter and gives the reason: `//nolint:gosec // fixed key, tests only`.
+- Tool comments stay: `//go:` directives such as `//go:generate` and `//go:build`, `//nolint`, the `// Code generated … DO NOT EDIT.` header and swaggo annotations such as `// @Summary`. A `//nolint` names its linter and gives the reason: `//nolint:gosec // fixed key, tests only`. A file with the generated-code header in its first 10 lines is generated.
 - API documentation is not a comment: huma's `doc` tags and an operation's `Summary` are read by the API's users, so their language is chosen for those readers, by the project.
 - The examples in these rule files keep English comments, matching the rule text.
-- A comment block is at most 3 lines. A line holding only a delimiter (`/*`, `*/`) and a tool comment are not counted. Longer reasoning goes in the PR body or the commit message.
-- Comments are at most half of the lines a PR adds. The rule applies from 20 added lines, so a small PR that only documents existing code is not blocked.
+- A comment block is at most 3 lines. A line holding only a delimiter (`/*`, `/**`, `*/`) and a tool comment are not counted. Longer reasoning goes in the PR body or the commit message.
+- Comments are at most half of the comment and code lines a PR adds in Go, TypeScript/JavaScript and SQL files. Blank lines, delimiter-only lines and tool comments are not counted, and generated files are left out. The rule applies from 20 such lines, so a small PR that only documents existing code is not blocked.
 - A comment sits at the line it explains, above it or at its end.
 - A sentence has at most 25 words.
 

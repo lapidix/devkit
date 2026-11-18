@@ -18,7 +18,7 @@ The rule files named here are in the project's `.claude/rules/{area}/` (`rules/f
    ```
    When the user names files or a folder instead, use those. Done when every file in `FILES` has its rule files listed.
 
-2. **Tools.** Run each check the project's `package.json` scripts provide: `check:arch`, `check-types`, `biome check` on `FILES`, and the tests. When the project has `scripts/check-pr.sh`, run `bash scripts/check-pr.sh --base <base>` (diff checks only) and record its output. Record each command and its result. A check that cannot run goes in the report with the reason.
+2. **Tools.** Run each check the project's `package.json` scripts provide: `check:arch`, `check-types`, `biome check` on `FILES`, and the tests. When the project has `scripts/check-pr.sh`, run `git fetch origin <base>`, then `bash scripts/check-pr.sh --base "$BASE"` from the repository root (diff checks only), and record its output. Record each command and its result. A check that cannot run goes in the report with the reason.
 
 3. **Grep checks.** Run every command below. Read each hit: comments, strings and legitimate exceptions can match.
 
