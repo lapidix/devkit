@@ -25,6 +25,7 @@ The rule files named here are in the project's `.claude/rules/{area}/` (`rules/f
    - `make test`, which includes `internal/archtest`, with `TEST_DATABASE_URL` set when a database is available. List the tests that were skipped (`go test -v ./... 2>&1 | grep -- '--- SKIP'`) and report them under "not checked".
    - `make generate` then `git diff --exit-code`, and `go mod tidy` then `git diff --exit-code` (and the same in `tools/`). Run them on a clean tree and restore it afterwards (`git checkout -- .`). A failing `make generate` is itself a finding: the queries and the migrations disagree.
    - `make vuln`.
+   - When the project has `scripts/check-pr.sh`, run `bash scripts/check-pr.sh --base <base>` (diff checks only) and record its output.
 
 3. **Grep checks.** Run every command below. Read each hit: comments, strings and legitimate exceptions can match.
 

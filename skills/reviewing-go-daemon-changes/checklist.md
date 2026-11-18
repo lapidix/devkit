@@ -8,7 +8,7 @@ Apply the sections whose rule files cover the file under review. Each item names
 - Initialisms are all caps or all lower, the package name is not repeated in its identifiers, getters have no `Get`, interfaces are `-er` or role nouns, receivers are one or two letters and the same on every method.
 - Interfaces are declared by the package that uses them, with only the methods it calls. Constructors return concrete types; each implementation has `var _ Port = (*Impl)(nil)`.
 - Errors from outside are wrapped with the operation, the subject's id and `%w`; they are logged or returned, never both; nothing returns `(nil, nil)`; `panic`, `log.Fatal` and `os.Exit` appear only in `main`.
-- Comments say why, in English; a `//nolint` names its linter and its reason.
+- Comments say why, in English; a `//nolint` names its linter and its reason; a comment block is at most three lines, comments are at most half of the added code lines, and each sits at the line it explains (`rules/<area>/conventions.md`).
 
 ## Contexts and goroutines (`go/concurrency.md`, `go-daemon/lifecycle.md`)
 
