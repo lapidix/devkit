@@ -495,13 +495,22 @@ case_workflow_run_script() {
 # Everything devkit ships to a project (the architecture check files and the code the skill
 # examples scaffold) must pass the comment checks it enforces on the project's pull requests.
 case_shipped_code_passes() {
-  local arch=skills/setting-up-architecture-checks ex
+  local arch=skills/setting-up-architecture-checks ex n=0 files
+  local fail=
   repo_init
   mkdir -p "$build/repo/$arch"
-  cp "$repo/$arch/"*.cjs "$repo/$arch/"*.go "$build/repo/$arch/"
+  cp "$repo/$arch/"*.cjs "$repo/$arch/"*.go "$build/repo/$arch/" || fail="cp of $arch"
   for ex in "$repo"/skills/*/example-*.md; do
-    bash "$repo/examples/extract.sh" "$ex" "$build/repo/shipped/$(basename "$(dirname "$ex")")/$(basename "$ex" .md)" >/dev/null
+    # set -e is off inside a case run through ||, so each failure is recorded by hand
+    files=$(bash "$repo/examples/extract.sh" "$ex" "$build/repo/shipped/$(basename "$(dirname "$ex")")/$(basename "$ex" .md)" 2>&1) \
+      && [ -n "$files" ] || fail="extract of $ex"
+    n=$((n + 1))
   done
+  [ "$n" -gt 0 ] || fail="no skills/*/example-*.md found"
+  if [ -n "$fail" ]; then
+    printf 'FAIL %s (%s)\n' "$case_name" "$fail" >>"$fails"
+    return 0
+  fi
   commit shipped
   PR_MAX_LINES=100000 expect 0 --base main </dev/null
 }
