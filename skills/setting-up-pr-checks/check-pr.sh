@@ -86,35 +86,62 @@ Resolves #N
 TEMPLATE
 }
 
-body_awk() { # body_awk TEMPLATE BODY: prints the violations of B1 to B4 and the warnings of B6
-  LC_ALL=C awk -v rule="git/pull-request.md" -v max_paras="$PR_MAX_WHY_PARAGRAPHS" \
-    -v max_why="$PR_MAX_WHY_CHARS" -v max_changes="$PR_MAX_CHANGES_CHARS" \
-    -v max_scope="$PR_MAX_SCOPE_CHARS" -v max_notes="$PR_MAX_NOTES_CHARS" \
-    -v max_words="$PR_MAX_SENTENCE_WORDS" '
-function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
-function nonempty(s) { s = trim(s); sub(/^([-*+]|[0-9]+\.)([ \t]+|$)/, "", s); return trim(s) != "" }
-function item(s) { s = trim(s); return s ~ /^[-*+]([ \t]|$)/ }
-# A prose chunk (a paragraph or one list item) ends here: split it into sentences and warn on long ones.
-# A backtick span counts as one word, so its spaces are hidden while the chunk is split.
-function flush(   s, out, n, w, i, k, st, q) {
-  if (chunk == "") return
-  s = chunk; chunk = ""; out = ""
+# Functions every awk program below starts with, so a PR body and a code comment are read alike.
+# shellcheck disable=SC2016 # awk code: its backticks and $ are awk's, not the shell's
+awk_lib='
+function trim(s) { gsub(/^[ \t\r]+|[ \t\r]+$/, "", s); return s }
+# line without its HTML comments; inc carries an open <!-- over to the next line
+function strip_html(line,   text, i) {
+  text = ""
+  while (1) {
+    if (inc) {
+      i = index(line, "-->")
+      if (!i) return text
+      line = substr(line, i + 3); inc = 0
+    } else {
+      i = index(line, "<!--")
+      if (!i) return text line
+      text = text substr(line, 1, i - 1); line = substr(line, i + 4); inc = 1
+    }
+  }
+}
+# Splits s into words (sw; a backtick span is one word, its spaces kept as \001) and sentences
+# ending in . ? or !. Returns how many have more than max_words words; long_at and long_len hold
+# the first word and the length of each.
+function long_sentences(s,   out, q, n, i, st, k) {
+  out = ""
   while (match(s, /`[^`]*`/)) {
     q = substr(s, RSTART, RLENGTH); gsub(/[ \t]/, "\001", q)
     out = out substr(s, 1, RSTART - 1) q
     s = substr(s, RSTART + RLENGTH)
   }
-  n = split(out s, w, /[ \t]+/)
-  st = 1
+  n = split(out s, sw, /[ \t]+/)
+  st = 1; k = 0
   for (i = 1; i <= n; i++) {
-    if (w[i] !~ /[.?!]$/ && i != n) continue
-    if (i - st + 1 > max_words + 0) {
-      q = ""
-      for (k = st; k < st + 6; k++) q = q (k > st ? " " : "") w[k]
-      gsub(/\001/, " ", q)
-      warn[++nw] = "warning: PR body: a sentence has " (i - st + 1) " words, at most " max_words ": \"" q " …\" (" rule ")"
-    }
+    if (sw[i] !~ /[.?!]$/ && i != n) continue
+    if (i - st + 1 > max_words + 0) { long_at[++k] = st; long_len[k] = i - st + 1 }
     st = i + 1
+  }
+  return k
+}
+'
+
+body_awk() { # body_awk TEMPLATE BODY: prints the violations of B1 to B4 and the warnings of B6
+  LC_ALL=C awk -v rule="git/pull-request.md" -v max_paras="$PR_MAX_WHY_PARAGRAPHS" \
+    -v max_why="$PR_MAX_WHY_CHARS" -v max_changes="$PR_MAX_CHANGES_CHARS" \
+    -v max_scope="$PR_MAX_SCOPE_CHARS" -v max_notes="$PR_MAX_NOTES_CHARS" \
+    -v max_words="$PR_MAX_SENTENCE_WORDS" "$awk_lib"'
+function nonempty(s) { s = trim(s); sub(/^([-*+]|[0-9]+\.)([ \t]+|$)/, "", s); return trim(s) != "" }
+function item(s) { s = trim(s); return s ~ /^[-*+]([ \t]|$)/ }
+# A prose chunk (a paragraph or one list item) ends here: warn on each long sentence in it.
+function flush(   n, j, k, q) {
+  if (chunk == "") return
+  n = long_sentences(chunk); chunk = ""
+  for (j = 1; j <= n; j++) {
+    q = ""
+    for (k = long_at[j]; k < long_at[j] + 6; k++) q = q (k > long_at[j] ? " " : "") sw[k]
+    gsub(/\001/, " ", q)
+    warn[++nw] = "warning: PR body: a sentence has " long_len[j] " words, at most " max_words ": \"" q " …\" (" rule ")"
   }
 }
 FILENAME != cur_file { cur_file = FILENAME; fence = 0; inc = 0; phase = (FILENAME == ARGV[1]) ? 1 : 2; sec = 0 }
@@ -125,21 +152,7 @@ FILENAME != cur_file { cur_file = FILENAME; fence = 0; inc = 0; phase = (FILENAM
   fl = 0
   if (t ~ /^(```|~~~)/) { fence = !fence; text = line; fl = 1 }
   else if (fence) { text = line; fl = 1 }
-  else {
-    text = ""
-    while (1) {
-      if (inc) {
-        i = index(line, "-->")
-        if (!i) { line = ""; break }
-        line = substr(line, i + 3); inc = 0
-      } else {
-        i = index(line, "<!--")
-        if (!i) break
-        text = text substr(line, 1, i - 1); line = substr(line, i + 4); inc = 1
-      }
-    }
-    text = text line
-  }
+  else text = strip_html(line)
   t = trim(text)
   if (!fence && text ~ /^## /) {
     if (phase == 2) flush()
@@ -215,8 +228,7 @@ END {
 # (docs.example.com/a.html), dotted library APIs (os.Getenv) and names with no lowercase letter
 # (NODE_ENV).
 refs_awk() {
-  LC_ALL=C awk '
-function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
+  LC_ALL=C awk "$awk_lib"'
 function span(s,   tok, ln, p, first, last, ext, ispath) {
   tok = s
   if (s == "" || (tok in seen)) return
@@ -250,19 +262,7 @@ function span(s,   tok, ln, p, first, last, ext, ispath) {
   t = trim(line)
   if (t ~ /^(```|~~~)/) { fence = !fence; next }
   if (fence) next
-  text = ""
-  while (1) {
-    if (inc) {
-      i = index(line, "-->")
-      if (!i) { line = ""; break }
-      line = substr(line, i + 3); inc = 0
-    } else {
-      i = index(line, "<!--")
-      if (!i) break
-      text = text substr(line, 1, i - 1); line = substr(line, i + 4); inc = 1
-    }
-  }
-  line = text line
+  line = strip_html(line)
   # span() calls match() too, so the position of this span is saved first
   while (match(line, /`[^`]*`/)) {
     rs = RSTART; rl = RLENGTH
@@ -398,8 +398,7 @@ check_size() {
 # (/*, /**, */, **/ alone) neither counts nor ends it.
 comments_awk() { # comments_awk PATH RULE LANG(go|ts|sql) DIFF FILE
   LC_ALL=C awk -v path="$1" -v rule="$2" -v lang="$3" -v max_lines="$PR_MAX_COMMENT_LINES" \
-    -v max_words="$PR_MAX_SENTENCE_WORDS" '
-function trim(s) { gsub(/^[ \t\r]+|[ \t\r]+$/, "", s); return s }
+    -v max_words="$PR_MAX_SENTENCE_WORDS" "$awk_lib"'
 # Tool comments: Go directives, generated-file headers, migration and query annotations (goose, sqlc
 # -- name:, drizzle --> statement-breakpoint), swaggo // @Summary-style lines, linter and coverage
 # switches, license tags.
@@ -426,22 +425,7 @@ function outside(t, tok,   off, p, rest) {
   return 0
 }
 # the first sentence of the block text over the limit, as its word count; 0 when none
-function longest(s,   out, n, w, i, st, q) {
-  out = ""
-  while (match(s, /`[^`]*`/)) {
-    q = substr(s, RSTART, RLENGTH); gsub(/[ \t]/, "\001", q)
-    out = out substr(s, 1, RSTART - 1) q
-    s = substr(s, RSTART + RLENGTH)
-  }
-  n = split(out s, w, /[ \t]+/)
-  st = 1
-  for (i = 1; i <= n; i++) {
-    if (w[i] !~ /[.?!]$/ && i != n) continue
-    if (i - st + 1 > max_words + 0) return i - st + 1
-    st = i + 1
-  }
-  return 0
-}
+function longest(s) { return long_sentences(s) ? long_len[1] : 0 }
 function endblock(   w) {
   if (!bopen) return
   bopen = 0
