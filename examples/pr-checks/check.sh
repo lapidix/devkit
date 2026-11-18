@@ -419,6 +419,44 @@ warning: a.go:3: a comment sentence has 26 words, at most 25 (go/conventions.md)
 E
 }
 
+# ratio_go BLOCKS EXTRA: a package line, BLOCKS two-line comment blocks each followed by a var, then EXTRA vars.
+ratio_go() {
+  awk -v b="$1" -v e="$2" 'BEGIN {
+    print "package b"
+    for (i = 1; i <= b; i++) { print "// c" i " a"; print "// c" i " b"; print "var v" i " = " i }
+    for (i = 1; i <= e; i++) print "var x" i " = " i
+  }'
+}
+ratio_ts() { # ratio_ts BLOCKS EXTRA: the same shape without the package line
+  awk -v b="$1" -v e="$2" 'BEGIN {
+    for (i = 1; i <= b; i++) { print "// c" i " a"; print "// c" i " b"; print "export const v" i " = " i }
+    for (i = 1; i <= e; i++) print "export const x" i " = " i
+  }'
+}
+case_ratio_over()        { repo_init; ratio_go 6 1 | put b.go; commit b
+  expect 1 --base main <<'E'
+PR: comments are 60% of added code lines (12 of 20), at most 50% (go/conventions.md)
+E
+}
+case_ratio_mixed_rules() { repo_init; ratio_go 3 0 | put b.go; ratio_ts 3 1 | put x.ts; commit b
+  expect 1 --base main <<'E'
+PR: comments are 60% of added code lines (12 of 20), at most 50% (go/conventions.md, typescript/conventions.md)
+E
+}
+case_ratio_exact_half()  { repo_init; ratio_go 5 4 | put b.go; commit b
+  expect 0 --base main </dev/null
+}
+case_ratio_below_min()   { repo_init; printf -- '-- one\n' | put m.sql; commit b
+  expect 0 --base main </dev/null
+}
+case_ratio_goose()       { repo_init
+  awk 'BEGIN { for (i = 1; i <= 8; i++) { print "-- +goose Up"; print "-- ListOrdersByUser"; print "CREATE INDEX i" i " ON t (c);"; print "-- +goose Down"; print "DROP INDEX i" i ";" } }' | put m.sql; commit b
+  expect 0 --base main </dev/null
+}
+case_no_diff()           { repo_init; ratio_go 6 1 | put b.go; printf 'package c\n\n// one\n// two\n// three\n// four\n' | put c.go; commit b
+  expect 0 --base main --no-diff --body "$(good_body | body_file body)" </dev/null
+}
+
 # runner
 
 mkdir -p "$build"

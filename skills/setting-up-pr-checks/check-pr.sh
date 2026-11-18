@@ -514,10 +514,26 @@ check_comments() {
   fi
 }
 
+# D3 (blocking): added comment lines may be at most PR_MAX_COMMENT_PERCENT of the added code
+# lines (comments included), once there are PR_MIN_LINES_FOR_RATIO of them.
+check_ratio() {
+  local percent rules="" total=$((comment_total + code_total))
+  [ "$total" -ge "$PR_MIN_LINES_FOR_RATIO" ] || return 0
+  [ $((comment_total * 100)) -gt $((PR_MAX_COMMENT_PERCENT * total)) ] || return 0
+  percent=$((comment_total * 100 / total))
+  [ "$seen_go" -eq 0 ] || rules="go/conventions.md"
+  [ "$seen_typescript" -eq 0 ] || rules="$rules${rules:+, }typescript/conventions.md"
+  [ "$seen_database" -eq 0 ] || rules="$rules${rules:+, }database/conventions.md"
+  printf 'PR: comments are %s%% of added code lines (%s of %s), at most %s%% (%s)\n' \
+    "$percent" "$comment_total" "$total" "$PR_MAX_COMMENT_PERCENT" "$rules"
+  failed=1
+}
+
 # D1 to D4: size, comment blocks, comment share, restating comments.
 check_diff() {
   check_size
   check_comments
+  check_ratio
   [ -z "$comment_warnings" ] || printf '%s\n' "$comment_warnings"
 }
 
