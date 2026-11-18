@@ -357,18 +357,18 @@ check_body() {
 }
 
 
-# is_generated PATH: a lockfile, a Go file whose first 10 lines at HEAD hold Go's generated-code
-# header (also honoured by golangci-lint and GitHub), or a file marked linguist-generated in
-# .gitattributes.
+# is_generated PATH: a lockfile, a Go file whose first 10 lines hold Go's generated-code header
+# (also honoured by golangci-lint and GitHub), read at HEAD or at the base for a deleted file, or a
+# file marked linguist-generated in .gitattributes.
 is_generated() {
   local value
   case ${1##*/} in
-    package-lock.json | pnpm-lock.yaml | yarn.lock | bun.lock | go.sum) return 0 ;;
+    package-lock.json | pnpm-lock.yaml | yarn.lock | bun.lock | go.sum | go.work.sum) return 0 ;;
   esac
   case $1 in
     *.go)
       # awk reads to the end so git never gets SIGPIPE, which pipefail would report
-      if git -C "$root" cat-file blob "HEAD:$1" 2>/dev/null |
+      if { git -C "$root" cat-file blob "HEAD:$1" 2>/dev/null || git -C "$root" cat-file blob "$base:$1" 2>/dev/null; } |
         LC_ALL=C awk 'NR <= 10 && /^\/\/ Code generated .* DO NOT EDIT\.$/ { f = 1 } END { exit !f }'; then
         return 0
       fi
