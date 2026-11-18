@@ -85,6 +85,90 @@ check-pr.sh: body file /nonexistent not found
 E
 }
 
+good_body() {
+  cat <<'B'
+## Issue
+Resolves #1
+
+## Why
+Readers need a short reason.
+
+## Changes
+- Adds `a.go`.
+
+## Verification
+**Verified**
+- `bash check.sh`: passed
+**Not verified**
+- None
+
+## Out of scope & follow-ups
+None
+
+## Notes
+None
+B
+}
+
+# body_with SED-ARGS...: good_body edited by sed, written to a file whose path is printed
+body_with() { good_body | sed "$@" | body_file body; }
+
+case_body_good()         { repo_init; expect 0 --base main --no-diff --body "$(good_body | body_file body)" </dev/null; }
+case_template_matches_rule() {
+  repo_init
+  awk '/^## Body/ {b=1} b && /^```markdown/ {t=1; next} t && /^```/ {exit} t {sub(/[ \t]+$/, ""); print}' \
+    "$repo/rules/git/pull-request.md" >"$build/rule-template.txt"
+  awk '/^ *cat <<.TEMPLATE.$/ {t=1; next} /^TEMPLATE$/ {t=0} t' "$script" >"$build/script-template.txt"
+  [ -s "$build/rule-template.txt" ] && diff -q "$build/rule-template.txt" "$build/script-template.txt" >/dev/null ||
+    printf 'FAIL %s (template differs from the rule)\n' "$case_name" >>"$fails"
+}
+case_body_missing_header() { repo_init; expect 1 --base main --no-diff --body "$(body_with '/^## Notes$/,$d')" <<'E'
+PR body: missing section "## Notes" (git/pull-request.md)
+E
+}
+case_body_out_of_order() { repo_init
+  f=$(good_body | awk '/^## Changes/ {s=1} /^## Verification/ {s=0} s {c = c $0 "\n"; next} /^## Out of scope/ {printf "%s", c} {print}' | body_file body)
+  expect 1 --base main --no-diff --body "$f" <<'E'
+PR body: section "## Verification" is out of order (git/pull-request.md)
+E
+}
+case_body_extra_header_ok() { repo_init; expect 0 --base main --no-diff --body "$(body_with '/^## Issue$/{n;a\
+\
+## ⚠️ Merge #41 first\
+Merge #41 first.
+}')" </dev/null; }
+case_body_empty_section() { repo_init; expect 1 --base main --no-diff --body "$(body_with '/^## Notes$/{n;s/.*/<!-- later -->/;}')" <<'E'
+PR body: section "## Notes" is empty; write None when there is nothing to say (git/pull-request.md)
+E
+}
+case_body_bullet_only_empty() { repo_init; f=$(body_with '/^- Adds/s/.*/- /')
+  expect 1 --base main --no-diff --body "$f" <<'E'
+PR body: section "## Changes" is empty; write None when there is nothing to say (git/pull-request.md)
+E
+}
+case_verified_missing()  { repo_init; expect 1 --base main --no-diff --body "$(body_with '/^\*\*Not verified\*\*$/,/^- None$/d')" <<'E'
+PR body: Verification needs a **Not verified** list with at least one item; write - None when there are none (git/pull-request.md)
+E
+}
+case_verified_empty_item() { repo_init; expect 1 --base main --no-diff --body "$(body_with '/^- `bash check.sh`/s/.*/-/')" <<'E'
+PR body: Verification needs a **Verified** list with at least one item; write - None when there are none (git/pull-request.md)
+E
+}
+case_project_template_without_markers() { repo_init
+  printf '## Summary\n\n## Test plan\n- [ ] tested\n' | put .github/PULL_REQUEST_TEMPLATE.md; commit t
+  expect 0 --base main --no-diff --body "$(printf '## Summary\nFixes it.\n\n## Test plan\n- [x] tested\n' | body_file body)" </dev/null
+}
+case_body_crlf()         { repo_init; expect 0 --base main --no-diff --body "$(good_body | sed "s/\$/$(printf '\r')/" | body_file body)" </dev/null; }
+case_body_empty()        { repo_init; expect 1 --base main --no-diff --body "$(body_file body </dev/null)" <<'E'
+PR body: missing section "## Issue" (git/pull-request.md)
+PR body: missing section "## Why" (git/pull-request.md)
+PR body: missing section "## Changes" (git/pull-request.md)
+PR body: missing section "## Verification" (git/pull-request.md)
+PR body: missing section "## Out of scope & follow-ups" (git/pull-request.md)
+PR body: missing section "## Notes" (git/pull-request.md)
+E
+}
+
 # runner
 
 mkdir -p "$build"

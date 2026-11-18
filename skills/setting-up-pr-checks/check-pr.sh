@@ -60,7 +60,109 @@ die_config() { echo ".github/pr-checks.env:$*" >&2; exit 2; }
 
 failed=0
 
-check_body() { :; } # the body checks, B1 to B6
+# The body template of rules/git/pull-request.md, without trailing whitespace.
+default_template() {
+  cat <<'TEMPLATE'
+## Issue
+Resolves #N
+
+## Why
+
+## Changes
+
+## Verification
+**Verified**
+-
+**Not verified**
+-
+
+## Out of scope & follow-ups
+
+## Notes
+TEMPLATE
+}
+
+body_awk() { # body_awk TEMPLATE BODY: prints the violations of B1 to B3
+  LC_ALL=C awk -v rule="git/pull-request.md" '
+function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
+function nonempty(s) { s = trim(s); sub(/^([-*+]|[0-9]+\.)([ \t]+|$)/, "", s); return trim(s) != "" }
+function item(s) { s = trim(s); return s ~ /^[-*+]([ \t]|$)/ }
+FILENAME != cur_file { cur_file = FILENAME; fence = 0; inc = 0; phase = (FILENAME == ARGV[1]) ? 1 : 2; sec = 0 }
+{
+  gsub(/\r/, "")
+  line = $0
+  t = trim(line)
+  if (t ~ /^(```|~~~)/) { fence = !fence; text = line }
+  else if (fence) text = line
+  else {
+    text = ""
+    while (1) {
+      if (inc) {
+        i = index(line, "-->")
+        if (!i) { line = ""; break }
+        line = substr(line, i + 3); inc = 0
+      } else {
+        i = index(line, "<!--")
+        if (!i) break
+        text = text substr(line, 1, i - 1); line = substr(line, i + 4); inc = 1
+      }
+    }
+    text = text line
+  }
+  t = trim(text)
+  if (!fence && text ~ /^## /) {
+    if (phase == 1) { tn++; tname[tn] = t; tidx[t] = tn }
+    else { bn++; bname[bn] = t; sec = bn; if (!(t in bidx)) bidx[t] = bn; active = (bidx[t] == bn); mk = "" }
+    next
+  }
+  if (phase == 1) {
+    if (t == "**Verified**") vsec = tn
+    if (t == "**Not verified**") nsec = tn
+  } else if (sec && active) {
+    if (nonempty(text)) has[sec] = 1
+    if (t == "**Verified**") mk = "V"
+    else if (t == "**Not verified**") mk = "N"
+    else if (mk != "" && item(t)) { sub(/^[-*+]/, "", t); if (trim(t) != "") cnt[mk]++ }
+  }
+}
+END {
+  for (i = 1; i <= tn; i++)
+    if (!(tname[i] in bidx)) print "PR body: missing section \"" tname[i] "\" (" rule ")"
+  for (p = 1; p <= bn; p++) {
+    if (bidx[bname[p]] != p || !(bname[p] in tidx)) continue
+    for (q = p + 1; q <= bn; q++)
+      if (bidx[bname[q]] == q && (bname[q] in tidx) && tidx[bname[q]] < tidx[bname[p]]) {
+        print "PR body: section \"" bname[p] "\" is out of order (" rule ")"
+        break
+      }
+  }
+  for (p = 1; p <= bn; p++)
+    if (bidx[bname[p]] == p && (bname[p] in tidx) && !has[p])
+      print "PR body: section \"" bname[p] "\" is empty; write None when there is nothing to say (" rule ")"
+  if (vsec && nsec && vsec == nsec && (tname[vsec] in bidx)) {
+    if (cnt["V"] < 1) print "PR body: Verification needs a **Verified** list with at least one item; write - None when there are none (" rule ")"
+    if (cnt["N"] < 1) print "PR body: Verification needs a **Not verified** list with at least one item; write - None when there are none (" rule ")"
+  }
+}
+' "$@"
+}
+
+# B1 to B3: the template's sections, in order, each with content; Verification lists.
+check_body() {
+  local tpl="" f out
+  for f in .github/PULL_REQUEST_TEMPLATE.md .github/pull_request_template.md \
+    PULL_REQUEST_TEMPLATE.md docs/PULL_REQUEST_TEMPLATE.md; do
+    if [ -f "$root/$f" ]; then tpl="$root/$f"; break; fi
+  done
+  if [ -n "$tpl" ]; then
+    out=$(body_awk "$tpl" "$body")
+  else
+    out=$(body_awk <(default_template) "$body")
+  fi
+  [ -z "$out" ] || { printf '%s\n' "$out"; failed=1; }
+}
+
+
 check_diff() { :; } # the diff checks, D1 to D4
 
 load_config
