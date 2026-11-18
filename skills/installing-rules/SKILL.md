@@ -39,7 +39,7 @@ Rules are copied into the project's `.claude/rules/`, not linked: Claude Code lo
    | MongoDB | `database/mongodb`, with `database/mongoose` (NestJS) or `database/mongo-go-driver` (Go) |
    | pnpm monorepo (the repo root) | `monorepo` |
 
-   A frontend reads `api/contract.md` when it calls one of these servers, but its globs match server code, so `api` goes to server apps only; in a frontend-only project, copy it without a prefix. `git` holds one person's commit and PR format; add it only when the user asks. Done when the user has confirmed which areas go to which apps.
+   A frontend reads `api/contract.md` when it calls one of these servers, but its globs match server code, so `api` goes to server apps only; in a frontend-only project, copy it without a prefix. `git` holds one person's commit and PR format; add it only when the user asks. A project that enforces the PR check in CI gets `git/pull-request.md` from `setting-up-pr-checks`. Done when the user has confirmed which areas go to which apps.
 
 3. **Copy.** From the project root, run `copy-rules.sh` once per group of areas that go to the same apps. In a monorepo, pass `--prefix <app folder>` for each of those apps: the script puts every `**/` glob under the app's folder, so one app's rules do not load while you work on another. Root areas (`monorepo`, `git`) take no prefix. For a Next.js app in `apps/web` and a NestJS app in `apps/api`:
 

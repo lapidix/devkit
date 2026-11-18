@@ -43,7 +43,7 @@ build:
 
 ## Versions
 
-- **Go**: the `go` line of `go.mod`, kept on the newest patch release (`go 1.26.10`, not `go 1.26.0`). CI reads it with `go-version-file: go.mod`. Standard-library fixes ship in patch releases, and govulncheck reports the ones an older patch lacks.
+- **Go**: the `go` line of `go.mod`, kept on the newest patch release (`go 1.26.11`, not `go 1.26.0`). CI reads it with `go-version-file: go.mod`. Standard-library fixes ship in patch releases, and govulncheck reports the ones an older patch lacks.
 - **Go-built tools** (sqlc, goose, govulncheck) live in their own module, `tools/go.mod`, and run with `go tool -modfile=tools/go.mod <tool>`. Every machine then runs the same version, and nothing is installed globally. A separate module because a `tool` line in the app's `go.mod` puts the tool's dependencies into the app's graph: sqlc alone adds about 45 modules, can upgrade the app's own dependencies, and raises the app's `go` line to its own minimum.
   - Add or upgrade: `go get -modfile=tools/go.mod -tool github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1`, then `cd tools && go mod tidy`. A tidy run from the root would read the app's packages as part of the tools module.
   - `tools/go.mod`'s `go` line never exceeds the app's: the toolchain is chosen from the root `go.mod`, and a higher tools version stops every `go tool` call. Raise both together.

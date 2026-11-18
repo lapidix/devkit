@@ -1,6 +1,6 @@
 ---
 paths:
-  - "**/*.{ts,tsx}"
+  - "**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}"
   - "**/tsconfig*.json"
 ---
 
@@ -72,6 +72,14 @@ roles: dto.roles ?? [], // a user the server sends no roles for has none
 ```
 
 The examples in these rule files keep English comments, matching the rule text.
+
+- A comment block is at most 3 lines. A line holding only a delimiter (`/*`, `/**`, `*/`) and a tool comment are not counted, and neither ends the block. Longer reasoning goes in the PR body or the commit message.
+- Tool comments are `eslint-disable` and `eslint-enable`, `@ts-expect-error`, `@ts-ignore`, `@ts-nocheck` and `@ts-check`, `/// <reference`, the test environment pragmas `@vitest-environment` and `@jest-environment`, `@jsxImportSource`, `biome-ignore`, `prettier-ignore`, the coverage ignores (`v8 ignore`, `c8 ignore`, `istanbul ignore`) and `SPDX-License-Identifier`.
+- Comments are at most half of the code lines a PR adds in Go, TypeScript/JavaScript and SQL files: 10 added code lines allow 5 added comment lines. Blank lines, delimiter-only lines and tool comments are not counted, and generated files are left out. The rule applies once comment and code lines together reach 20, so a small PR that only documents existing code is not blocked.
+- A comment sits at the line it explains, above it or at its end.
+- A sentence has at most 25 words.
+
+Why: a reader of the next change reads these comments to learn what the code cannot say, so they are relevant, findable at the line, understandable in one pass and usable for the change (ISO 24495-1). The reader is the next developer to change the code.
 
 ## File names
 
