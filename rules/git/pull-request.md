@@ -62,7 +62,7 @@ Resolves #N
 
 ## Size
 
-A PR changes at most 1,000 lines, counting added and deleted lines and leaving out generated files: lockfiles (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lock`, `go.sum`) and files marked `linguist-generated` in `.gitattributes`. A PR over the limit says in Notes why it could not be split.
+A PR changes at most 1,000 lines, counting added and deleted lines and leaving out generated files: lockfiles (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lock`, `go.sum`) and files marked `linguist-generated` in `.gitattributes`. A PR over the limit says in Notes why it could not be split. The check warns on size and does not block the merge.
 
 Why: a reviewer's attention drops as the diff grows, so large changes get skimmed instead of read.
 
@@ -79,7 +79,7 @@ ISO 24495-1 sets no numbers. The limits here are devkit's.
 
 ## Checks
 
-`scripts/check-pr.sh`, installed by the `setting-up-pr-checks` skill, checks the template headers, the section contents and limits, the backtick references, the size and the comment rules in `rules/go/conventions.md`, `rules/typescript/conventions.md` and `rules/database/conventions.md`. `.github/pr-checks.env` changes the numbers. Passing the check does not mean the text conforms to ISO 24495: the standard judges whether readers can use the text, which a script cannot measure.
+`scripts/check-pr.sh`, installed by the `setting-up-pr-checks` skill, checks the template headers, the section contents and limits, the backtick references, the size and the comment rules in `rules/go/conventions.md`, `rules/typescript/conventions.md` and `rules/database/conventions.md`. Size and sentence length only warn; every other violation blocks. `.github/pr-checks.env` changes the numbers. Passing the check does not mean the text conforms to ISO 24495: the standard judges whether readers can use the text, which a script cannot measure.
 
 ## Creating the PR
 
