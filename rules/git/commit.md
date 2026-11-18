@@ -9,7 +9,7 @@
 - <next point>
 ```
 
-- **Summary**: starts lowercase, imperative mood, 50 characters or fewer, no trailing period.
+- **Summary**: starts lowercase, imperative mood, no trailing period. The first line, type included (`<type>: <summary>`), is 72 characters or fewer: GitHub cuts a longer first line with "…" in its commit list, and a limit on the whole line leaves no question whether the type counts.
 - **Body**: a blank line after the summary, then bullets. Each bullet says what changed *and* why. Wrap at 72 characters; indent continuation lines by two spaces.
 - Write both in English.
 

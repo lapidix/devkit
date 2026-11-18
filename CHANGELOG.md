@@ -2,6 +2,12 @@
 
 What changed for projects that use these rules and skills, newest first. Every commit on `main` is a release (README, "Install"); this file lists the ones that change what a rule or skill asks of a project.
 
+## 2026-11-18
+
+### Changed
+
+- `git/commit.md`: the first line, type included, is at most 72 characters; it used to be a 50-character summary, which did not say whether the type counted.
+
 ## 2026-10-28
 
 ### Changed
