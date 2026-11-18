@@ -386,6 +386,16 @@ function instring(p,   q) {
   q = sprintf("%c", 39)
   return (split(p, tmp, "\"") - 1) % 2 || (split(p, tmp, q) - 1) % 2 || (split(p, tmp, "`") - 1) % 2
 }
+# the position of the first tok in t that is outside a string; 0 when there is none
+function outside(t, tok,   off, p) {
+  off = 0
+  while ((p = index(t, tok)) > 0) {
+    if (!instring(substr(t, 1, off + p - 1))) return off + p
+    off += p
+    t = substr(t, p + 1)
+  }
+  return 0
+}
 # the first sentence of the block text over the limit, as its word count; 0 when none
 function longest(s,   out, n, w, i, st, q) {
   out = ""
@@ -431,8 +441,9 @@ phase == 1 {
     if (!index(substr(t, 3), "*/")) inblk = 1
   } else if ((lang == "sql" && t ~ /^--/) || (lang != "sql" && t ~ /^\/\//)) kind = "C"
   else {
-    p = index(t, "/*")
-    if (p && !instring(substr(t, 1, p - 1)) && !index(substr(t, p + 2), "*/")) inblk = 1
+    p = outside(t, "/*")
+    cp = outside(t, (lang == "sql") ? "--" : "//")
+    if (p && (!cp || p < cp) && !index(substr(t, p + 2), "*/")) inblk = 1
   }
   if (kind == "C" && (t == "/*" || t == "/**" || t == "*/" || t == "**/")) kind = "D"
   else if (kind == "C" && istool(t)) kind = "T"

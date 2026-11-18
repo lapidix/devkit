@@ -396,6 +396,14 @@ case_block_glob_in_code() { repo_init; printf 'export const g = "src/**/*.ts"\ne
 x.ts:3: comment block of 4 lines, at most 3 (typescript/conventions.md)
 E
 }
+case_block_slash_star_in_trailing() { repo_init
+  printf 'package a\n\nvar dir = "d" // files in dir/*.go\nvar b = 2\nvar c = 3\nvar d = 4\n' | put a.go; commit b
+  expect 0 --base main </dev/null
+  printf 'package a\n\nvar v = 1 // see /* x\nvar b = 2\nvar c = 3\nvar d = 4\n' | put a.go; commit c
+  expect 0 --base main </dev/null
+  printf 'SELECT 1; -- see /* x\nSELECT 2;\nSELECT 3;\nSELECT 4;\n' | put m.sql; commit d
+  expect 0 --base main </dev/null
+}
 case_comment_sentence()  { repo_init; printf 'package a\n\n// %s\n' "$(awk 'BEGIN { for (i = 1; i <= 26; i++) printf "w%d ", i }' | sed 's/ $/./')" | put a.go; commit b
   expect 0 --base main <<'E'
 warning: a.go:3: a comment sentence has 26 words, at most 25 (go/conventions.md)
