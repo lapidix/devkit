@@ -86,7 +86,7 @@ This links `~/.claude/rules/git` to the clone, so a `git pull` updates it (`CLAU
 | File | Covers |
 |---|---|
 | `git/commit.md` | Commit message format, the 13 types, no AI attribution |
-| `git/pull-request.md` | Issue first, branch, title and body template, `--body-file`, merge method |
+| `git/pull-request.md` | Issue first, branch, title, body template and section limits, backtick references, size, plain language, the PR check, `--body-file`, merge method |
 | `typescript/conventions.md` | tsconfig strictness, names of exported values, interface or type, comments, file names |
 | `monorepo/workspace.md` | apps and packages, package names, dependencies and catalogs, shared config, scripts, pinned versions |
 | `monorepo/env.md` | Env per app, when a root env is allowed, CI secrets |
@@ -130,7 +130,7 @@ This links `~/.claude/rules/git` to the clone, so a `git pull` updates it (`CLAU
 | `server/runtime.md` | Env validated at boot, structured logs and levels, error tracking, health, metrics |
 | `server/testing.md` | What a server tests (mappers without a database, repositories only for database-specific behavior), coverage |
 | `server/nestjs.md` | Mapping it all to NestJS: module wiring, global setup (pipe, filter, interceptor, guards, cls, pino), Vitest with SWC |
-| `database/conventions.md` | Any engine: choosing an engine and ORM, schema files, UUIDv7 ids, relations between modules, standard columns and deletion, time, money, migrations and destructive changes (expand → contract), agent safety, indexes, list ordering, running database tests |
+| `database/conventions.md` | Any engine: choosing an engine and ORM, schema files, UUIDv7 ids, relations between modules, standard columns and deletion, time, money, migrations and destructive changes (expand → contract), agent safety, indexes, comments, list ordering, running database tests |
 | `database/postgres.md` | snake_case plural names, the type table (uuid, timestamptz, bigint, jsonb …), foreign keys and onDelete, partial indexes, connections and poolers |
 | `database/mongodb.md` | Engine rules: collection and field names, the value table, embedding or referencing, replica sets, indexes created by migrations |
 | `database/prisma.md` | Prisma 7: layout and the generated client, `@@map`/`@map` and types, the transaction client type, migrations with `migrate diff`, P2002, poolers |
