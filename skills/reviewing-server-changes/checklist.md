@@ -6,7 +6,7 @@ Apply the sections whose rule files cover the file under review. Each item names
 
 - File names are `{subject}.{role}.ts` with the role last (`user.prisma.repository.ts`, `identity-hasher.port.ts`, `withdraw.usecase.ts`).
 - Contracts a function receives (commands, queries) are `interface`; data shapes (snapshots, results) are `type`.
-- Names shared between test files carry `Test`; comments say why, in English; a comment block is at most three lines, comments are at most half of the added code lines, and each sits at the line it explains (`rules/<area>/conventions.md`).
+- Names shared between test files carry `Test`; comments say why, in English; a comment block is at most three lines, comments are at most half of the added code lines, and each sits at the line it explains (`rules/typescript/conventions.md`, `rules/database/conventions.md`).
 - In a Nest server, a class injected through a constructor is imported as a value, not with `import type`; the decorator metadata needs it.
 
 ## Structure (`architecture.md`)

@@ -9,7 +9,7 @@ Apply the sections whose rule files cover the file under review. Each item names
 - Interfaces are declared by the package that uses them, with only the methods it calls. Constructors return concrete types; each implementation has `var _ Port = (*Impl)(nil)`.
 - Stateful types use pointer receivers and small immutable values use value receivers, one kind per type.
 - Errors from outside are wrapped with the operation, the subject's id and `%w`; they are logged or returned, never both; nothing returns `(nil, nil)`; `panic`, `log.Fatal` and `os.Exit` appear only in `main`.
-- Comments say why, in English; a `//nolint` names its linter and its reason; a comment block is at most three lines, comments are at most half of the added code lines, and each sits at the line it explains (`rules/<area>/conventions.md`).
+- Comments say why, in English; a `//nolint` names its linter and its reason; a comment block is at most three lines, comments are at most half of the added code lines, and each sits at the line it explains (`rules/go/conventions.md`, `rules/database/conventions.md`).
 
 ## Contexts and goroutines (`go/concurrency.md`)
 
