@@ -245,6 +245,55 @@ PR body: Why has 4 paragraphs, at most 3 (git/pull-request.md)
 E
 }
 
+# refs_init: main has internal/user/service.go (one line), old.go and a .gitignore; pr drops old.go
+refs_init() {
+  repo_init
+  git -C "$build/repo" checkout -q main
+  printf 'func (s *Service) Withdraw() {}\n' | put internal/user/service.go
+  printf 'func OldName() {}\n' | put old.go
+  printf 'node_modules/\n' | put .gitignore
+  commit refs
+  git -C "$build/repo" checkout -q -B pr
+  git -C "$build/repo" rm -q old.go
+  commit drop
+}
+# refs_body: good_body with its Changes section replaced by stdin; prints the file path
+refs_body() { body_section Changes; }
+
+case_refs_missing_path()  { refs_init; f=$(printf -- '- `internal/user/svc.go`\n' | refs_body); expect 1 --base main --no-diff --body "$f" <<'E'
+PR body: `internal/user/svc.go` does not exist (git/pull-request.md)
+E
+}
+case_refs_missing_ident() { refs_init; f=$(printf -- '- `WithdrawUser`\n' | refs_body); expect 1 --base main --no-diff --body "$f" <<'E'
+PR body: `WithdrawUser` is not in the repository; if it is not code, drop the backticks (git/pull-request.md)
+E
+}
+case_refs_ok()            { refs_init
+  f=$(printf -- '- `user/service.go`\n- `internal/user/`\n- `s.Withdraw()`\n- `OldName`\n- `old.go`\n- `.gitignore`\n' | refs_body)
+  expect 0 --base main --no-diff --body "$f" </dev/null
+}
+case_refs_line()          { refs_init; f=$(printf -- '- `internal/user/service.go:99`\n' | refs_body); expect 1 --base main --no-diff --body "$f" <<'E'
+PR body: `internal/user/service.go:99` is past the end of internal/user/service.go (1 lines) (git/pull-request.md)
+E
+  f=$(printf -- '- `internal/user/service.go:1`\n' | refs_body); expect 0 --base main --no-diff --body "$f" </dev/null
+}
+case_refs_not_paths()     { refs_init
+  f=$(printf -- '- `issue/42-x`\n- `origin/main`\n- `node_modules/arthron/llms.txt`\n- `/tmp/pr-body.md`\n- `~/.claude/rules/git`\n- `.claude/rules/{area}/`\n- `actions/checkout@v4`\n- `**/*.md`\n' | refs_body)
+  expect 0 --base main --no-diff --body "$f" </dev/null
+}
+case_refs_skipped_words() { refs_init
+  f=$(printf -- '- `zod`\n- `main`\n- `Makefile`\n- `pnpm check:arch`\n- `--body-file`\n- `#42`\n- `v1.2.3`\n- `2.1`\n' | refs_body)
+  expect 0 --base main --no-diff --body "$f" </dev/null
+}
+case_refs_in_fence_ignored() { refs_init
+  f=$(printf '```\n`Nope.go`\n```\n- fine\n' | refs_body)
+  expect 0 --base main --no-diff --body "$f" </dev/null
+}
+case_refs_dedup()         { refs_init; f=$(printf -- '- `WithdrawUser`\n- again `WithdrawUser`\n' | refs_body); expect 1 --base main --no-diff --body "$f" <<'E'
+PR body: `WithdrawUser` is not in the repository; if it is not code, drop the backticks (git/pull-request.md)
+E
+}
+
 # runner
 
 mkdir -p "$build"

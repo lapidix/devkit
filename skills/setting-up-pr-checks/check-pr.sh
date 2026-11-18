@@ -203,10 +203,103 @@ END {
 ' "$@"
 }
 
-# B1 to B4 and B6: the template's sections, in order, each with content; Verification lists;
-# section caps; long sentences (warnings).
+refs_awk() { # refs_awk BODY: prints one TAB-separated candidate per backtick span outside code (B5)
+  LC_ALL=C awk '
+function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
+function span(s,   tok, ln, p, last, ext, isdir, ispath, id) {
+  tok = s
+  if (s == "" || (tok in seen)) return
+  seen[tok] = 1
+  if (s ~ /[ \t]/) return
+  ln = 0
+  if (match(s, /:[0-9]+(-[0-9]+)?$/)) {
+    split(substr(s, RSTART + 1), p, "-")
+    ln = (p[2] != "") ? p[2] : p[1]
+    s = substr(s, 1, RSTART - 1)
+  }
+  if (s == "" || s ~ /^[-#@$~\/]/ || s ~ /[]*{}<>=|@[]/ || index(s, "://") || s ~ /^v?[0-9][0-9.]*$/) return
+  last = s; sub(/.*\//, "", last)
+  isdir = (s ~ /\/$/)
+  ext = ""
+  if (match(last, /\.[A-Za-z0-9]+$/)) ext = substr(last, RSTART + 1)
+  ispath = isdir || last ~ /^\.[A-Za-z0-9_-]+$/ || (ext != "" && index(" md go ts tsx js jsx mjs cjs json yml yaml sql sh toml mod sum proto txt env lock css html ", " " ext " "))
+  if (ispath) { print "P\t" s "\t" ln + 0 "\t" tok; return }
+  if (s ~ /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*(\(\))?$/ && (s ~ /[_.]/ || s ~ /[a-z][A-Z]/)) {
+    sub(/\(\)$/, "", s); sub(/.*\./, "", s)
+    print "I\t" s "\t0\t" tok
+  }
+}
+{
+  gsub(/\r/, "")
+  line = $0
+  t = trim(line)
+  if (t ~ /^(```|~~~)/) { fence = !fence; next }
+  if (fence) next
+  text = ""
+  while (1) {
+    if (inc) {
+      i = index(line, "-->")
+      if (!i) { line = ""; break }
+      line = substr(line, i + 3); inc = 0
+    } else {
+      i = index(line, "<!--")
+      if (!i) break
+      text = text substr(line, 1, i - 1); line = substr(line, i + 4); inc = 1
+    }
+  }
+  line = text line
+  while (match(line, /`[^`]*`/)) {
+    span(substr(line, RSTART + 1, RLENGTH - 2))
+    line = substr(line, RSTART + RLENGTH)
+  }
+}
+' "$1"
+}
+
+# B5: a path or name in backticks exists in HEAD or the base. Unsure cases are skipped.
+check_refs() {
+  local cands files kind a n tok p res found hf lines rc=0
+  cands=$(refs_awk "$body")
+  [ -n "$cands" ] || return 0
+  files=$({ git -C "$root" -c core.quotepath=off ls-tree -r --name-only HEAD | sed 's/^/H /'
+    git -C "$root" -c core.quotepath=off ls-tree -r --name-only "$base" | sed 's/^/B /'; })
+  while IFS=$'\t' read -r kind a n tok; do
+    if [ "$kind" = P ]; then
+      rc=0
+      git -C "$root" check-ignore -q --no-index -- "$a" 2>/dev/null || rc=$?
+      [ "$rc" -eq 1 ] || continue
+      p=${a%/}
+      res=$(P=$p LC_ALL=C awk '
+BEGIN { p = ENVIRON["P"]; lp = length(p) }
+{
+  f = substr($0, 3)
+  sfx = (f == p || (length(f) > lp && substr(f, length(f) - lp) == "/" p))
+  if (sfx || index(f, p "/") == 1 || index(f, "/" p "/") > 0) found = 1
+  if (sfx && !hf && substr($0, 1, 1) == "H") hf = f
+}
+END { printf "%s\t%s", found ? "Y" : "N", hf }' <(printf '%s\n' "$files"))
+      found=${res%%$'\t'*}
+      hf=${res#*$'\t'}
+      if [ "$found" != Y ]; then
+        echo "PR body: \`$tok\` does not exist (git/pull-request.md)"
+      elif [ "$n" -gt 0 ] && [ -n "$hf" ]; then
+        lines=$(git -C "$root" cat-file blob "HEAD:$hf" | LC_ALL=C awk 'END { print NR }')
+        if [ "$n" -gt "$lines" ]; then
+          echo "PR body: \`$tok\` is past the end of $hf ($lines lines) (git/pull-request.md)"
+        fi
+      fi
+    else
+      git -C "$root" grep -q -w -F -e "$a" HEAD -- 2>/dev/null && continue
+      git -C "$root" grep -q -w -F -e "$a" "$base" -- 2>/dev/null && continue
+      echo "PR body: \`$tok\` is not in the repository; if it is not code, drop the backticks (git/pull-request.md)"
+    fi
+  done <<<"$cands"
+}
+
+# B1 to B6: the template's sections, in order, each with content; Verification lists; section caps;
+# references that exist; long sentences (warnings).
 check_body() {
-  local tpl="" f out
+  local tpl="" f out blocking refs warnings all=""
   for f in .github/PULL_REQUEST_TEMPLATE.md .github/pull_request_template.md \
     PULL_REQUEST_TEMPLATE.md docs/PULL_REQUEST_TEMPLATE.md; do
     if [ -f "$root/$f" ]; then tpl="$root/$f"; break; fi
@@ -216,10 +309,16 @@ check_body() {
   else
     out=$(body_awk <(default_template) "$body")
   fi
-  [ -z "$out" ] && return 0
-  printf '%s\n' "$out"
+  blocking=$(printf '%s\n' "$out" | awk '!/^warning: /')
+  warnings=$(printf '%s\n' "$out" | awk '/^warning: /')
+  refs=$(check_refs)
+  for f in "$blocking" "$refs" "$warnings"; do
+    [ -z "$f" ] || all="$all${all:+$'\n'}$f"
+  done
+  [ -z "$all" ] && return 0
+  printf '%s\n' "$all"
   # warnings alone leave the exit code at 0
-  if printf '%s\n' "$out" | grep -qv '^warning: '; then failed=1; fi
+  if [ -n "$blocking$refs" ]; then failed=1; fi
 }
 
 
