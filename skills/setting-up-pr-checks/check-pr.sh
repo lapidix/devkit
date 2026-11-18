@@ -437,6 +437,22 @@ function outside(t, tok,   off, p, rest) {
   }
   return 0
 }
+# whether code line t ends inside a backtick string (a Go raw string, a template literal), given
+# whether it starts in one; a // or /* outside a string ends the scan
+function rawopen(t, open,   i, c, q) {
+  q = open ? "`" : ""
+  for (i = 1; i <= length(t); i++) {
+    c = substr(t, i, 1)
+    if (q != "") {
+      if (c == "\\" && (q != "`" || lang == "ts")) i++
+      else if (c == q) q = ""
+      continue
+    }
+    if (c == "\"" || c == sq || c == "`") q = c
+    else if (c == "/" && (substr(t, i + 1, 1) == "/" || substr(t, i + 1, 1) == "*")) break
+  }
+  return q == "`"
+}
 # the first sentence of the block text over the limit, as its word count; 0 when none
 function longest(s) { return long_sentences(s) ? long_len[1] : 0 }
 function endblock(   w) {
@@ -447,6 +463,7 @@ function endblock(   w) {
   w = longest(btext)
   if (w) print "warning: " path ":" bstart ": a comment sentence has " w " words, at most " max_words " (" rule ")"
 }
+BEGIN { sq = sprintf("%c", 39) }
 FILENAME != cur { cur = FILENAME; phase = (FILENAME == ARGV[1]) ? 1 : 2 }
 phase == 1 {
   if ($0 !~ /^@@ / || !match($0, /[+][0-9]+(,[0-9]+)?/)) next
@@ -458,7 +475,9 @@ phase == 1 {
 {
   t = trim($0)
   kind = "X"
-  if (t == "") kind = "B"
+  # a line inside a backtick string is part of the string, however it starts
+  if (inraw) { inraw = rawopen(t, 1); if (t == "") kind = "B" }
+  else if (t == "") kind = "B"
   else if (inblk) {
     kind = "C"
     if (index(t, "*/")) inblk = 0
@@ -470,6 +489,7 @@ phase == 1 {
     p = outside(t, "/*")
     cp = outside(t, (lang == "sql") ? "--" : "//")
     if (p && (!cp || p < cp) && !index(substr(t, p + 2), "*/")) inblk = 1
+    if (lang != "sql") inraw = rawopen(t, 0)
   }
   if (kind == "C" && (t == "/*" || t == "/**" || t == "*/" || t == "**/")) kind = "D"
   else if (kind == "C" && istool(t)) kind = "T"

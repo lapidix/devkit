@@ -496,6 +496,66 @@ case_block_after_string_with_slash_star() { repo_init
 a.go:4: comment block of 4 lines, at most 3 (go/conventions.md)
 E
 }
+# lines inside a Go raw string or a template literal are code, however they start
+case_block_in_backtick_string() { repo_init
+  put a.go <<'T'
+package a
+
+const fixture = `
+// a
+// b
+// c
+// d
+`
+
+var tag = struct {
+A int `json:"a"`
+}{}
+T
+  put t.ts <<'T'
+export const t = `
+// a
+// b
+// c
+// d
+${'x'}`
+T
+  commit b
+  expect 0 --base main </dev/null
+}
+# a block after a closed backtick string, or after a rune that holds a backtick, is still a block
+case_block_after_backtick_string() { repo_init
+  put a.go <<'T'
+package a
+
+const q = `select 1`
+var r = '`'
+
+// a
+// b
+// c
+// d
+var x = 1
+T
+  put b.go <<'T'
+package b
+
+const f = `
+x
+`
+
+// a
+// b
+// c
+// d
+var y = 1
+T
+  commit b
+  expect 1 --base main <<'E'
+a.go:6: comment block of 4 lines, at most 3 (go/conventions.md)
+b.go:7: comment block of 4 lines, at most 3 (go/conventions.md)
+E
+}
 # sqlc query annotations, drizzle breakpoints and swaggo annotations are tool comments
 case_tool_sqlc_name()    { repo_init
   printf -- '-- GetUser reads deleted users too,\n-- so the handler can tell them apart\n-- from users that never existed.\n-- name: GetUser :one\nSELECT * FROM users WHERE id = $1;\n' | put query.sql; commit q
