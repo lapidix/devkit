@@ -2,7 +2,7 @@
 
 module example.com/daemon/tools
 
-go 1.26.10
+go 1.26.11
 
 tool (
 	github.com/bufbuild/buf/cmd/buf
