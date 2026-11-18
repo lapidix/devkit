@@ -457,6 +457,41 @@ case_no_diff()           { repo_init; ratio_go 6 1 | put b.go; printf 'package c
   expect 0 --base main --no-diff --body "$(good_body | body_file body)" </dev/null
 }
 
+# the run: block of the workflow in the skill, dedented, in a clone that has origin/main
+case_workflow_run_script() {
+  local skill="$repo/skills/setting-up-pr-checks/SKILL.md" status=0
+  repo_init
+  mkdir -p "$build/repo/scripts"
+  cp "$script" "$build/repo/scripts/check-pr.sh"
+  commit script
+  rm -rf "$build/clone"
+  git clone -q "$build/repo" "$build/clone"
+  awk '
+    /^ *```yaml/ && !done { y = 1; next }
+    y && /^ *```/ { y = 0; done = 1; next }
+    y && !r && /^ *run: \|[ \t]*$/ { match($0, /^ */); ri = RLENGTH; r = 1; next }
+    y && r {
+      if ($0 ~ /^[ \t]*$/) { print ""; next }
+      match($0, /^ */)
+      if (RLENGTH <= ri) { r = 0; y = 0; done = 1; next }
+      if (bi == "") bi = RLENGTH
+      print substr($0, bi + 1)
+    }
+  ' "$skill" >"$build/run.sh"
+  [ -s "$build/run.sh" ] || { printf 'FAIL %s (no run block in SKILL.md)\n' "$case_name" >>"$fails"; return; }
+  (cd "$build/clone" && AUTHOR_TYPE=Bot BODY='' BASE_REF=main RUNNER_TEMP="$build" bash "$build/run.sh") \
+    >"$build/out.txt" 2>"$build/err.txt" || status=$?
+  if [ "$status" != 0 ] || [ -s "$build/out.txt" ]; then
+    { echo "FAIL $case_name (bot: exit $status, want 0 and no output)"; cat "$build/out.txt" "$build/err.txt"; } >>"$fails"
+  fi
+  status=0
+  (cd "$build/clone" && AUTHOR_TYPE=User BODY='' BASE_REF=main RUNNER_TEMP="$build" bash "$build/run.sh") \
+    >"$build/out.txt" 2>"$build/err.txt" || status=$?
+  if [ "$status" != 1 ] || [ "$(grep -c 'missing section' "$build/out.txt")" != 6 ] || [ "$(wc -l <"$build/out.txt" | tr -d ' ')" != 6 ]; then
+    { echo "FAIL $case_name (user: exit $status, want 1 and 6 missing section lines)"; cat "$build/out.txt" "$build/err.txt"; } >>"$fails"
+  fi
+}
+
 # runner
 
 mkdir -p "$build"

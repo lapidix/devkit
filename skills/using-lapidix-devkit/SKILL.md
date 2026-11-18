@@ -23,6 +23,7 @@ Rules are the conventions; skills are the procedures. A rule the project install
 | Check a whole Go daemon against the rules | `auditing-go-daemons` |
 | Upgrade a Go daemon's Go, tools or dependencies, change its contract, cut a release | `upgrading-go-daemons` |
 | Install or repair architecture checks | `setting-up-architecture-checks` |
+| Install or repair the PR check in CI | `setting-up-pr-checks` |
 | Copy the rules into a project, or update them | `installing-rules` |
 | Open a pull request | `writing-pull-requests` |
 

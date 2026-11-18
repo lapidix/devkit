@@ -175,6 +175,7 @@ This links `~/.claude/rules/git` to the clone, so a `git pull` updates it (`CLAU
 | `auditing-go-daemons` | Check a whole daemon against the rules and order the fixes |
 | `upgrading-go-daemons` | Upgrade a daemon's Go version, tools or dependencies, change its contract, and cut a release |
 | `setting-up-architecture-checks` | Install or repair architecture checks: dependency-cruiser (`check:arch`) for TypeScript apps and monorepos, `internal/archtest` for Go |
+| `setting-up-pr-checks` | Install or repair the PR check: PR body, size and comment limits in CI, with `check-pr.sh` |
 | `writing-pull-requests` | Open a pull request, or write its title and body |
 
 ## Contributing
