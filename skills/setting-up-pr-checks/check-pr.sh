@@ -333,7 +333,45 @@ check_body() {
 }
 
 
-check_diff() { :; } # the diff checks, D1 to D4
+# is_generated PATH: a lockfile, or a file marked linguist-generated in .gitattributes.
+is_generated() {
+  local value
+  case ${1##*/} in
+    package-lock.json | pnpm-lock.yaml | yarn.lock | bun.lock | go.sum) return 0 ;;
+  esac
+  value=$(git -C "$root" check-attr linguist-generated -- "$1" | sed 's/^.*: //')
+  [ "$value" = set ] || [ "$value" = true ]
+}
+
+# D1: lines changed outside generated files (a warning). A rename counts under its new path and a
+# binary file (-\t-) has no lines.
+size_lines=0
+check_size() {
+  local rec added deleted path new _
+  size_lines=0
+  while IFS= read -r -d '' rec; do
+    added=${rec%%$'\t'*}
+    rec=${rec#*$'\t'}
+    deleted=${rec%%$'\t'*}
+    path=${rec#*$'\t'}
+    if [ -z "$path" ]; then
+      IFS= read -r -d '' _
+      IFS= read -r -d '' new
+      path=$new
+    fi
+    [ "$added" != "-" ] || continue
+    ! is_generated "$path" || continue
+    size_lines=$((size_lines + added + deleted))
+  done < <(git -C "$root" diff --numstat -z -M "$base"...HEAD)
+  if [ "$size_lines" -gt "$PR_MAX_LINES" ]; then
+    echo "warning: PR: $size_lines lines changed outside generated files, at most $PR_MAX_LINES; say in Notes why it is not split (git/pull-request.md)"
+  fi
+}
+
+# D1 to D4: size, comment blocks, comment share, restating comments.
+check_diff() {
+  check_size
+}
 
 load_config
 [ -z "$body" ] || check_body

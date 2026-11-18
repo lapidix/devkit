@@ -311,6 +311,32 @@ PR body: `internal/user/service.go:1-99` is past the end of internal/user/servic
 E
 }
 
+lines() { awk -v n="$1" 'BEGIN { for (i = 1; i <= n; i++) print "line " i }'; } # lines N: N distinct lines
+
+size_warning() { printf 'warning: PR: %s lines changed outside generated files, at most %s; say in Notes why it is not split (git/pull-request.md)\n' "$1" "$2"; }
+
+case_size_over()         { repo_init; lines 1001 | put big.txt; commit big; expect 0 --base main <<E
+$(size_warning 1001 1000)
+E
+}
+case_size_lockfile()     { repo_init; lines 5000 | put package-lock.json; lines 500 | put go.sum; commit locks; expect 0 --base main </dev/null; }
+case_size_linguist()     { repo_init; printf 'sqlcgen/** linguist-generated=true\n' | put .gitattributes
+  { printf 'package sqlcgen\n'; lines 2000 | sed 's|^|// |' | head -5; lines 2000 | sed 's|^|var v|'; } | put sqlcgen/q.go; commit gen
+  expect 0 --base main </dev/null
+}
+case_size_binary()       { repo_init; printf '\000\001\002' | put blob.bin; commit bin; expect 0 --base main </dev/null; }
+case_size_rename()       { repo_init; git -C "$build/repo" checkout -q main; lines 1200 | put big.txt; commit big
+  git -C "$build/repo" checkout -q -B pr; git -C "$build/repo" mv big.txt moved.txt
+  sed -i.bak '1s/.*/changed/' "$build/repo/moved.txt"; rm "$build/repo/moved.txt.bak"; commit mv
+  expect 0 --base main </dev/null
+}
+case_size_from_config()  { repo_init; git -C "$build/repo" checkout -q main; printf 'PR_MAX_LINES=10\n' | put .github/pr-checks.env; commit c
+  git -C "$build/repo" checkout -q -B pr; lines 11 | put a.txt; commit a
+  expect 0 --base main <<E
+$(size_warning 11 10)
+E
+}
+
 # runner
 
 mkdir -p "$build"
