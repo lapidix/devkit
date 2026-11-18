@@ -1,6 +1,6 @@
 ---
 paths:
-  - "**/*.{ts,tsx}"
+  - "**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}"
   - "**/tsconfig*.json"
 ---
 

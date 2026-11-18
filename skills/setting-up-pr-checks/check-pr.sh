@@ -254,7 +254,7 @@ function span(s,   tok, ln, p, first, last, ext, ispath) {
   last = s; sub(/.*\//, "", last)
   ext = ""
   if (match(last, /\.[A-Za-z0-9]+$/)) ext = substr(last, RSTART + 1)
-  ispath = (s ~ /\/$/ || last ~ /^\.[A-Za-z0-9_-]+$/ || (ext != "" && index(" md go ts tsx js jsx mjs cjs json yml yaml sql sh toml mod sum proto txt env lock css html ", " " ext " ")))
+  ispath = (s ~ /\/$/ || last ~ /^\.[A-Za-z0-9_-]+$/ || (ext != "" && index(" md go ts tsx mts cts js jsx mjs cjs json yml yaml sql sh toml mod sum proto txt env lock css html ", " " ext " ")))
   if (ispath && index(s, "/")) {
     first = s; sub(/\/.*/, "", first)
     if (first ~ /^[^.]/ && index(first, ".")) return
@@ -533,7 +533,7 @@ check_comments() {
     case $status in R*) IFS= read -r -d '' path ;; esac
     case $path in
       *.go) rule=go/conventions.md; lang=go ;;
-      *.ts | *.tsx | *.js | *.jsx | *.mjs | *.cjs) rule=typescript/conventions.md; lang=ts ;;
+      *.ts | *.tsx | *.mts | *.cts | *.js | *.jsx | *.mjs | *.cjs) rule=typescript/conventions.md; lang=ts ;;
       *.sql) rule=database/conventions.md; lang=sql ;;
       *) continue ;;
     esac

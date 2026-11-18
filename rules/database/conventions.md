@@ -4,6 +4,7 @@ paths:
   - "**/migrations/**"
   - "**/adapters/out/persistence/**"
   - "**/infrastructure/database/**"
+  - "**/*.sql"
 ---
 
 # Database conventions

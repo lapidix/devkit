@@ -445,6 +445,12 @@ case_block_sql()         { repo_init; printf -- '-- one\n-- two\n-- three\n-- fo
 m.sql:1: comment block of 4 lines, at most 3 (database/conventions.md)
 E
 }
+case_block_mts_cts()     { repo_init; printf '// 1\n// 2\n// 3\n// 4\nexport const a = 1\n' | put a.mts; printf '// 1\n// 2\n// 3\n// 4\nexport const b = 1\n' | put b.cts; commit b
+  expect 1 --base main <<'E'
+a.mts:1: comment block of 4 lines, at most 3 (typescript/conventions.md)
+b.cts:1: comment block of 4 lines, at most 3 (typescript/conventions.md)
+E
+}
 case_block_other_ext()   { repo_init; printf '# 1\n# 2\n# 3\n# 4\n' | put a.py; printf '# 1\n# 2\n# 3\n# 4\n' | put a.sh
   printf '# 1\n# 2\n# 3\n# 4\n' | put a.yml; commit b
   expect 0 --base main </dev/null
