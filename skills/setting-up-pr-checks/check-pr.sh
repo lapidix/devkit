@@ -223,10 +223,10 @@ END {
 
 # refs_awk BODY: prints one TAB-separated candidate per backtick span outside code (B5).
 # A span is a path (has a / once a leading ./ is dropped, and ends in /, a dotfile or a known
-# extension) or an identifier (camelCase, PascalCase or snake_case with a lowercase letter, no dot).
-# Skipped as unsure: bare file names (decimal.js, README.md, .gitattributes), hosts
-# (docs.example.com/a.html), dotted library APIs (os.Getenv) and names with no lowercase letter
-# (NODE_ENV).
+# extension), a file name with a known extension and no /, or an identifier (camelCase, PascalCase
+# or snake_case with a lowercase letter, no dot). Skipped as unsure: .js names and dotfiles without
+# a / (decimal.js, .gitattributes), hosts (docs.example.com/a.html), dotted library APIs
+# (os.Getenv) and names with no lowercase letter (NODE_ENV).
 refs_awk() {
   LC_ALL=C awk "$awk_lib"'
 function span(s,   tok, ln, p, first, last, ext, ispath) {
@@ -251,6 +251,8 @@ function span(s,   tok, ln, p, first, last, ext, ispath) {
     if (first ~ /^[^.]/ && index(first, ".")) return
     print "P\t" s "\t" ln + 0 "\t" tok; return
   }
+  # a file name without a / matches a file of that name anywhere in the tree
+  if (ispath && ext != "js" && s !~ /^\./ && s !~ /\/$/) { print "P\t" s "\t" ln + 0 "\t" tok; return }
   if (s ~ /^[A-Za-z_][A-Za-z0-9_]*(\(\))?$/ && s ~ /[a-z]/ && (s ~ /_/ || s ~ /[a-z][A-Z]/)) {
     sub(/\(\)$/, "", s)
     print "I\t" s "\t0\t" tok

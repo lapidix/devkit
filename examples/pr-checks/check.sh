@@ -339,9 +339,18 @@ E
 PR body: `WithdrawUser` is not in the repository; if it is not code, drop the backticks (git/pull-request.md)
 E
 }
-# a file name without a / may be a package or a file elsewhere; it is not checked
+# a .js name or a dotfile without a / may be a package or a kind of file; it is not checked
 case_refs_bare_names_skipped() { refs_init
-  f=$(printf -- '- `decimal.js`\n- `chart.js`\n- `.gitattributes`\n- `UserCard.tsx`\n' | refs_body); expect 0 --base main --no-diff --body "$f" </dev/null
+  f=$(printf -- '- `decimal.js`\n- `chart.js`\n- `.gitattributes`\n- `.env.local`\n' | refs_body); expect 0 --base main --no-diff --body "$f" </dev/null
+}
+# any other file name without a / is looked up by name anywhere in the tree, with its line number
+case_refs_bare_file_names() { refs_init
+  f=$(printf -- '- `service.go`\n- `service.go:1`\n- `old.go`\n- `README.md`\n' | refs_body); expect 0 --base main --no-diff --body "$f" </dev/null
+  f=$(printf -- '- `UserCard.tsx`\n- `withdraw_user.go`\n- `service.go:5`\n' | refs_body); expect 1 --base main --no-diff --body "$f" <<'E'
+PR body: `UserCard.tsx` does not exist; if it is not a path in this repository, drop the backticks (git/pull-request.md)
+PR body: `withdraw_user.go` does not exist; if it is not a path in this repository, drop the backticks (git/pull-request.md)
+PR body: `service.go:5` is past the end of internal/user/service.go (1 lines) (git/pull-request.md)
+E
 }
 # in a monorepo the same app-relative path names several files; one long enough is enough
 case_refs_line_any_match() { repo_init
